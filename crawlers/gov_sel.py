@@ -25,7 +25,7 @@ def stale_decorator(f):
 class SeleniumSpider(object):
     def __init__(self, url):
         chrome_options = Options()
-        # chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless")
         service_args = ['--verbose']
         driver = webdriver.Chrome(
             chrome_options=chrome_options,
