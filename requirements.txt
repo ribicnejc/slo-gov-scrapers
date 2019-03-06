@@ -1,3 +1,4 @@
 selenium
 chromedriver
 pypiwin32
+robots-txt-parser
