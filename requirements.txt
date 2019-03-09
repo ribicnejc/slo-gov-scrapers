@@ -2,3 +2,5 @@ selenium
 chromedriver
 pypiwin32
 robots-txt-parser
+psycopg2
+postgres
