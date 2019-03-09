@@ -4,8 +4,17 @@
 * integrate library for postgres in python
 * demo scraper
 * specify requirements for scraping
+* robots txt library parser
 
 # Miha
 * download postgres
 * create db as specified
 * run enviroment ready to scrap
+
+
+
+# Other
+* Poročilo
+* Robots.txt
+* paralelno izvajanje
+*

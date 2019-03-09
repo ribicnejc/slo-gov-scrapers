@@ -6,7 +6,9 @@ class DBHandler(object):
         self.db = Postgres("postgres://postgres@localhost/postgres")
 
     def insert_site(self):
-        pass
+        self.db.run("INSERT INTO crawldb.site"
+                    "(`domain`, `robots_content`, `sitemap_content`) "
+                    "VALUES ('ares.html', 'test2', 'test3');")
 
     def insert_page(self):
         pass
