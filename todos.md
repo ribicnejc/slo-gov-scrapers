@@ -17,4 +17,10 @@
 * Poročilo
 * Robots.txt
 * paralelno izvajanje
-*
+
+
+        # sitemaps (robots.txt), shranmo slike, ce dela js,
+        # htmlunit hitrejsi od seleniuma
+
+        # http://www.pisrs.si/Pis.web/pregledPredpisa?id=ZAKO1884
+        # duplikati,,, popravljanenj urlja.
