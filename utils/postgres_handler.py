@@ -1,12 +1,16 @@
 from postgres import Postgres
+import psycopg2
 
 
 class DBHandler(object):
     def __init__(self):
-        self.db = Postgres("postgres://postgres@localhost/postgres")
+        self.conn = psycopg2.connect(dbname='postgres', user='postgres', host='localhost', password='postgres1234')
 
     def insert_site(self):
-        pass
+        cursor = self.conn.cursor()
+        cursor.execute("""INSERT INTO crawldb.site
+                    (`domain`, `robots_content`, `sitemap_content`)
+                    VALUES ('ares.html', 'test2', 'test3');""")
 
     def insert_page(self):
         pass

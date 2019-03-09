@@ -1,4 +1,8 @@
-from crawlers.gov_sel import SeleniumSpider
+from crawlers.gov_selen import SeleniumSpider
+from utils.postgres_handler import DBHandler
 
-seleniumReviewSpider = SeleniumSpider("http://evem.gov.si/evem/drzavljani/zacetna.evem")
-seleniumReviewSpider.scrap_page()
+seleniumReviewSpider = SeleniumSpider("http://www.sova.gov.si")
+seleniumReviewSpider.check_robots()
+
+db = DBHandler()
+db.insert_site()
