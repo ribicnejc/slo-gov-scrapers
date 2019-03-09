@@ -4,13 +4,21 @@ import psycopg2
 
 class DBHandler(object):
     def __init__(self):
-        self.conn = psycopg2.connect(dbname='postgres', user='postgres', host='localhost', password='postgres1234')
+        self.conn = psycopg2.connect(dbname='postgres', port=5433, user='postgres', host='localhost',
+                                     password='postgres1234')
 
     def insert_site(self):
         cursor = self.conn.cursor()
-        cursor.execute("""INSERT INTO crawldb.site
-                    (`domain`, `robots_content`, `sitemap_content`)
-                    VALUES ('ares.html', 'test2', 'test3');""")
+        # cursor.execute("""INSERT INTO crawldb.site
+        #            (domain, robots_content, sitemap_content)
+        #            VALUES ('ares.html', 'test2', 'test3');""")
+
+        SQL = "INSERT INTO crawldb.site (domain, robots_content, sitemap_content) VALUES (%s, %s, %s);"
+        values = ('ares.html', 'test2', 'test3')
+
+        cursor.execute(SQL, values)
+
+        self.conn.commit()
 
     def insert_page(self):
         pass
