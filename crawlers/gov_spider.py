@@ -1,6 +1,9 @@
 import time
 import robotparser
 import robotstxtparser as rps
+from bs4 import BeautifulSoup
+import re
+
 
 from managers import frontier_manager
 from selenium import webdriver
@@ -50,5 +53,16 @@ class SeleniumSpider(object):
         self.driver.implicitly_wait(2)
         time.sleep(1)
         print self.driver.page_source
+
+        # page = BeautifulSoup(self.driver.page_source)
+
+        # print page
         # review_location_name = self.driver.find_element_by_css_selector('div h1.ui_header').text
+
+
+    def find_links(self, page):
+        page = BeautifulSoup(self.driver.page_source)
+
+        for link in page.findAll('a', attrs={'href': re.compile("^http://")}):
+            print link.get('href')
 
