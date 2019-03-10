@@ -1,6 +1,5 @@
 from Queue import Queue
 
-
 class Frontier(object):
     def __init__(self):
         self.frontier = Queue()
@@ -16,10 +15,13 @@ class Frontier(object):
 
 
 frontier = Frontier()
+visited = set()
 
 
 def get_next():
-    return frontier.get_next()
+    url = frontier.get_next()
+    visited.add(visited)
+    return url
 
 
 def is_not_empty():
@@ -27,7 +29,8 @@ def is_not_empty():
 
 
 def add_url(url):
-    frontier.add_url(url)
+    if url not in visited:
+        frontier.add_url(url)
 
 
 def plant_seeds():
