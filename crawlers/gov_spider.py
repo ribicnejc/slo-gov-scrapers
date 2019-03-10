@@ -1,9 +1,10 @@
 import time
-import urllib.robotparser
-from bs4 import BeautifulSoup
 import re
 
+from urllib.robotparser import RobotFileParser
+from bs4 import BeautifulSoup
 from managers import frontier_manager
+from utils.postgres_handler import DBHandler
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
@@ -30,8 +31,11 @@ class SeleniumSpider(object):
     def __init__(self, url):
         self.url = url
         self.sitemaps = set()
+        self.crawl_delay = 1
+        self.robots_content = ""
+        # self.db_data = DBHandler()
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        # chrome_options.add_argument("--headless")
         chrome_options.add_argument("User-Agent=*")
         service_args = ['--verbose']
         driver = webdriver.Chrome(
@@ -43,26 +47,44 @@ class SeleniumSpider(object):
         self.wait = WebDriverWait(self.driver, 5)
 
     def check_robots(self):
-        pass
-        # rp = robotparser.RobotFileParser()
-        # rp.s
-        # rp.set_url(self.url + "robots.txt")
-        # rp.read()
-        # print rp.entries
+        # pass
+        rp = RobotFileParser()
+        rp.set_url(self.url + "robots.txt")
+        rp.read()
+        self.robots_content = rp.__str__()
+        self.crawl_delay = rp.crawl_delay('*')
+        # todo check for excluded sites
 
-        # todo
-
+    # @stale_decorator
     def scrap_page(self):
+        # 1 check robots
         self.check_robots()
-        self.driver.implicitly_wait(2)
-        time.sleep(1)
 
-        print (self.driver.page_source)
+        # 2 save site
+        self.save_site()
 
-        # page = BeautifulSoup(self.driver.page_source)
+        # 3 fetch all urls
+        # 4 put urls to frontier
+        # 5 read binary images or content
 
-        # print page
-        # review_location_name = self.driver.find_element_by_css_selector('div h1.ui_header').text
+        # 6 get next url from frontier and repeat process
+        if frontier_manager.is_not_empty():
+            self.change_url(frontier_manager.get_next())
+
+    def change_url(self, url):
+        self.driver.get(url)
+        self.scrap_page()
+
+    def save_site(self):
+        return
+        # todo domain name etc...
+        domain = self.driver.current_url
+        robots_content = self.robots_content
+        sitemap_content = self.driver.page_source
+        self.db_data.insert_site(domain, robots_content, sitemap_content)
+
+    def insert_page(self):
+        site_id = self.db_data.get_site_id(self.driver.current_url)
 
     def find_links(self, page):
         page = BeautifulSoup(self.driver.page_source)
