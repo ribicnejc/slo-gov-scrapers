@@ -7,30 +7,52 @@ class DBHandler(object):
         self.conn = psycopg2.connect(dbname='postgres', port=5433, user='postgres', host='localhost',
                                      password='postgres1234')
 
-    def insert_site(self):
+    def insert_site(self, domain, robots_content, sitemap_content):
         cursor = self.conn.cursor()
         # cursor.execute("""INSERT INTO crawldb.site
         #            (domain, robots_content, sitemap_content)
         #            VALUES ('ares.html', 'test2', 'test3');""")
 
         SQL = "INSERT INTO crawldb.site (domain, robots_content, sitemap_content) VALUES (%s, %s, %s);"
-        values = ('ares.html', 'test2', 'test3')
-
+        values = (domain, robots_content, sitemap_content)
         cursor.execute(SQL, values)
-
         self.conn.commit()
 
-    def insert_page(self):
-        pass
+    def insert_page(self, site_id, page_type_code, url, html_content, http_status_code, accessed_time):
+        cursor = self.conn.cursor()
+        SQL = "INSERT INTO crawldb.page (site_id, page_type_code, url, html_content, http_status_code, accessed_time) VALUES (%s, %s, %s, %s, %s, %s);"
+        values = (site_id, page_type_code, url, html_content, http_status_code, accessed_time)
+        cursor.execute(SQL, values)
+        self.conn.commit()
 
-    def insert_image(self):
-        pass
+    def insert_image(self, page_id, filename, content_type, data, accessed_time):
+        cursor = self.conn.cursor()
+        SQL = "INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time) VALUES (%s, %s, %s, %s, %s)"
+        values = (page_id, filename, content_type, data, accessed_time)
+        cursor.execute(SQL, values)
+        self.conn.commit()
 
-    def insert_page_data(self):
-        pass
+    def insert_page_data(self, page_id, data_type_code, data):
+        cursor = self.conn.cursor()
+        SQL = "INSERT INTO crawldb.link (page_id, data_type_code, data) VALUES (%s, %s, %s);"
+        values = (page_id, data_type_code, data)
+        cursor.execute(SQL, values)
+        self.conn.commit()
 
-    def insert_page_type(self):
-        pass
+    def insert_page_type(self, code):
+        cursor = self.conn.cursor()
+        SQL = "INSERT INTO crawldb.page_type (code) VALUES (%s);"
+        values = (code)
+        cursor.execute(SQL, values)
+        self.conn.commit()
 
-    def insert_link(self):
-        pass
+    def insert_link(self, from_page, to_page):
+        cursor = self.conn.cursor()
+        SQL = "INSERT INTO crawldb.link (from_page, to_page) VALUES (%s, %s);"
+        values = (from_page, to_page)
+        cursor.execute(SQL, values)
+        self.conn.commit()
+
+    def get_site_id(self, url_domain_name):
+        SQL = "INSERT INTO crawldb.site (from_page, to_page) VALUES (%s, %s);"
+
