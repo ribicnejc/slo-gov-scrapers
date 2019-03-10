@@ -4,6 +4,7 @@ import re
 from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
 from managers import frontier_manager
+from utils import settings
 from utils.postgres_handler import DBHandler
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -70,8 +71,11 @@ class SeleniumSpider(object):
         # 6 get next url from frontier and repeat process
         if frontier_manager.is_not_empty():
             self.change_url(frontier_manager.get_next())
+        else:
+            self.driver.close()
 
     def change_url(self, url):
+        time.sleep(settings.TIME_BETWEEN_REQUESTS)
         self.driver.get(url)
         self.scrap_page()
 

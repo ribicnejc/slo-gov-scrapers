@@ -41,7 +41,7 @@ def plant_seeds():
     frontier.add_url("http://www.arso.gov.si/")
     frontier.add_url("http://www.evem.gov.si/")
     frontier.add_url("http://www.e-uprava.gov.si/")
-    frontier.add_url("http://www.podatki.gov.si/")
+    frontier.add_url("https://podatki.gov.si/")
     frontier.add_url("http://www.upravneenote.gov.si/")
     frontier.add_url("http://prostor3.gov.si/javni/login.jsp?jezik=sl")
     frontier.add_url("http://www.mju.gov.si/")
