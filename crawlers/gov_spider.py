@@ -1,7 +1,7 @@
 import time
-import urllib.robotparser
 from bs4 import BeautifulSoup
 import re
+import urllib
 
 from managers import frontier_manager
 from selenium import webdriver
@@ -57,7 +57,10 @@ class SeleniumSpider(object):
         self.driver.implicitly_wait(2)
         time.sleep(1)
 
-        print (self.driver.page_source)
+        # print (self.driver.page_source)
+
+
+        self.find_links(self.driver.page_source)
 
         # page = BeautifulSoup(self.driver.page_source)
 
@@ -65,6 +68,8 @@ class SeleniumSpider(object):
         # review_location_name = self.driver.find_element_by_css_selector('div h1.ui_header').text
 
     def find_links(self, page):
+
+        extensions = (".js, .pdf, .jpg, .png, .ppt, .pptx")
         page = BeautifulSoup(self.driver.page_source)
 
         print(page.findAll('script'))
@@ -72,10 +77,33 @@ class SeleniumSpider(object):
         for link in page.findAll('', attrs={'href': re.compile("^https?://")}):
 
 
-            # print urlparse.urlparse(link.get('href')).geturl()
-            frontier_manager.add_url(urllib.urlparse(link.get('href').geturl()))
+            # print urlparse.urlparse(link.get('href'))
+            urlfetched = str(urllib.parse.urlparse(link.get('href')))
+            if(not urlfetched.endswith(extensions)):
+                frontier_manager.add_url(urlfetched)
+                print (link.get('href'))
+            else:
+                print("NOT ADDED!!!!!!!!!!!!!!!!!!!     " + urlfetched)
 
-            print (link.get('href').getUrl())
+
 
 
         #print frontier_manager.frontier.frontier
+
+        for script in page.findAll('script'):
+
+            for line in str(script).split("\n"):
+                if(len(re.split("^https?://", line))>1):
+                    print(line)
+                    if (not self.parse_local(line).endswith(extensions)):
+                        frontier_manager.add_url(urlfetched)
+                        print(link.get('href'))
+
+
+
+
+        #print frontier_manager.frontier.frontier
+
+    def parse_local(self, s):
+        # parse link out of the line containing link...
+        return "NOT IMPLEMENTED"
