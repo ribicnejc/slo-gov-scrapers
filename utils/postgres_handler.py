@@ -18,23 +18,23 @@ class DBHandler(object):
         cursor.execute(SQL, values)
         self.conn.commit()
 
-    def insert_page(self, site_id, page_type_code, url, html_content, http_status_code, accessed_time):
+    def insert_page(self, site_id, page_type_code, url, html_content, http_status_code):
         cursor = self.conn.cursor()
         SQL = "INSERT INTO crawldb.page (site_id, page_type_code, url, html_content, http_status_code, accessed_time) VALUES (%s, %s, %s, %s, %s, %s);"
-        values = (site_id, page_type_code, url, html_content, http_status_code, accessed_time)
+        values = (site_id, page_type_code, url, html_content, http_status_code, "now")
         cursor.execute(SQL, values)
         self.conn.commit()
 
-    def insert_image(self, page_id, filename, content_type, data, accessed_time):
+    def insert_image(self, page_id, filename, content_type, data):
         cursor = self.conn.cursor()
         SQL = "INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time) VALUES (%s, %s, %s, %s, %s)"
-        values = (page_id, filename, content_type, data, accessed_time)
+        values = (page_id, filename, content_type, data, "now")
         cursor.execute(SQL, values)
         self.conn.commit()
 
     def insert_page_data(self, page_id, data_type_code, data):
         cursor = self.conn.cursor()
-        SQL = "INSERT INTO crawldb.link (page_id, data_type_code, data) VALUES (%s, %s, %s);"
+        SQL = "INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES (%s, %s, %s);"
         values = (page_id, data_type_code, data)
         cursor.execute(SQL, values)
         self.conn.commit()
@@ -42,7 +42,7 @@ class DBHandler(object):
     def insert_page_type(self, code):
         cursor = self.conn.cursor()
         SQL = "INSERT INTO crawldb.page_type (code) VALUES (%s);"
-        values = (code)
+        values = (code,)
         cursor.execute(SQL, values)
         self.conn.commit()
 
@@ -54,5 +54,12 @@ class DBHandler(object):
         self.conn.commit()
 
     def get_site_id(self, url_domain_name):
-        SQL = "INSERT INTO crawldb.site (from_page, to_page) VALUES (%s, %s);"
+        cursor = self.conn.cursor()
+        SQL = """SELECT id
+	             FROM crawldb.site
+	             WHERE domain=%s;"""
+        values=(url_domain_name,)
+        cursor.execute(SQL, values)
+        return cursor.fetchone()[0]
+
 
