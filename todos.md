@@ -1,15 +1,10 @@
 # TODOs
 
 # Nejc
-* integrate library for postgres in python
-* demo scraper
 * specify requirements for scraping
 * robots txt library parser
 
 # Miha
-* download postgres
-* create db as specified
-* run environment ready to scrap
 * writing report...
 * link extract
 * extract images -> download them and also pdfs ppts,...
