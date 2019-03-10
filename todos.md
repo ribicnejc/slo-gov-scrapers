@@ -9,7 +9,10 @@
 # Miha
 * download postgres
 * create db as specified
-* run enviroment ready to scrap
+* run environment ready to scrap
+* writing report...
+* link extract
+* extract images -> download them and also pdfs ppts,...
 
 
 

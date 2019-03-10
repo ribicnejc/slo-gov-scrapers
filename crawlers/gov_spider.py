@@ -31,7 +31,7 @@ class SeleniumSpider(object):
         self.url = url
         self.sitemaps = set()
         chrome_options = Options()
-        # chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless")
         chrome_options.add_argument("User-Agent=*")
         service_args = ['--verbose']
         driver = webdriver.Chrome(
@@ -56,6 +56,7 @@ class SeleniumSpider(object):
         self.check_robots()
         self.driver.implicitly_wait(2)
         time.sleep(1)
+
         print (self.driver.page_source)
 
         # page = BeautifulSoup(self.driver.page_source)
@@ -66,5 +67,15 @@ class SeleniumSpider(object):
     def find_links(self, page):
         page = BeautifulSoup(self.driver.page_source)
 
-        for link in page.findAll('a', attrs={'href': re.compile("^http://")}):
-            print (link.get('href'))
+        print(page.findAll('script'))
+
+        for link in page.findAll('', attrs={'href': re.compile("^https?://")}):
+
+
+            # print urlparse.urlparse(link.get('href')).geturl()
+            frontier_manager.add_url(urllib.urlparse(link.get('href').geturl()))
+
+            print (link.get('href').getUrl())
+
+
+        #print frontier_manager.frontier.frontier

@@ -30,6 +30,7 @@ def is_not_empty():
 
 
 def add_url(url):
+    # to prevent duplicates
     if url not in visited:
         frontier.add_url(url)
 
