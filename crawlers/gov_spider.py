@@ -38,7 +38,8 @@ class SeleniumSpider(object):
         self.robots_content = ""
         # self.db_data = DBHandler()
         chrome_options = Options()
-        # chrome_options.add_argument("--headless")
+        if settings.HEADLESS_BROWSER:
+            chrome_options.add_argument("--headless")
         chrome_options.add_argument("User-Agent=*")
         service_args = ['--verbose']
         driver = webdriver.Chrome(
@@ -67,12 +68,13 @@ class SeleniumSpider(object):
         self.save_site()
 
         # 3 fetch all urls
+        self.find_links(self.driver.page_source)
+
         # 4 put urls to frontier
         # 5 read binary images or content
         # print (self.driver.page_source)
 
 
-        self.find_links(self.driver.page_source)
 
         # 6 get next url from frontier and repeat process
         if frontier_manager.is_not_empty():
