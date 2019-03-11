@@ -13,6 +13,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
 
+documents_with_data = (".pdf", ".doc", ".docx", ".ppt", ".pptx.")
+jpg = ".jpg"
+extensions = documents_with_data + jpg
 
 def stale_decorator(f):
     def wrapper(*args, **kwargs):
@@ -100,41 +103,38 @@ class SeleniumSpider(object):
 
     def find_links(self, page):
 
-        extensions = (".js, .pdf, .jpg, .png, .ppt, .pptx")
         page = BeautifulSoup(self.driver.page_source)
 
         print(page.findAll('script'))
 
         for link in page.findAll('', attrs={'href': re.compile("^https?://")}):
 
-
             # print urlparse.urlparse(link.get('href'))
             urlfetched = str(urllib.parse.urlparse(link.get('href')))
-            if(not urlfetched.endswith(extensions)):
+            if (not urlfetched.endswith(extensions)):
                 frontier_manager.add_url(urlfetched)
-                print (link.get('href'))
+                print(link.get('href'))
             else:
                 print("NOT ADDED!!!!!!!!!!!!!!!!!!!     " + urlfetched)
 
-
-
-
-        #print frontier_manager.frontier.frontier
+        # print frontier_manager.frontier.frontier
 
         for script in page.findAll('script'):
 
             for line in str(script).split("\n"):
-                if(len(re.split("^https?://", line))>1):
-                    print(line)
-                    if (not self.parse_local(line).endswith(extensions)):
-                        frontier_manager.add_url(urlfetched)
-                        print(link.get('href'))
+                #parsin urls from line
+                urls_parsed_from_line = re.findall(
+                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line);
 
+                if (urls_parsed_from_line > 0):
+                    for i in urls_parsed_from_line:
+                        if not self.endswithany(urllib.parse.urlparse(i), extensions):
+                            frontier_manager.add_url(urlfetched)
 
+                            # print frontier_manager.frontier.frontier
 
-
-        #print frontier_manager.frontier.frontier
-
-    def parse_local(self, s):
-        # parse link out of the line containing link...
-        return "NOT IMPLEMENTED"
+    def endswithany(s, exts):
+        for i in exts:
+            if s.endswith(i):
+                return True
+        return False
