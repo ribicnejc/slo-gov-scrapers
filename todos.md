@@ -3,11 +3,20 @@
 # Nejc
 * specify requirements for scraping
 * robots txt library parser
+* robots.txt sitemaps
+* frontier looping fail
+* url locker for frontier
 
 # Miha
 * writing report...
 * link extract
 * extract images -> download them and also pdfs ppts,...
+* make methods usable for inserting to postgresDB
+
+
+
+* don't fetch js or css objects )
+* 
 
 
 

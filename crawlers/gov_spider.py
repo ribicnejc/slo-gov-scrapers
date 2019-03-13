@@ -41,7 +41,7 @@ class SeleniumSpider(object):
         self.sitemaps = set()
         self.crawl_delay = 1
         self.robots_content = ""
-        # self.db_data = DBHandler()
+        self.db_data = DBHandler()
         chrome_options = Options()
         if settings.HEADLESS_BROWSER:
             chrome_options.add_argument("--headless")
@@ -112,10 +112,10 @@ class SeleniumSpider(object):
         for link in page.findAll('', attrs={'href': re.compile("^https?://")}):
 
             # print urlparse.urlparse(link.get('href'))
-            urlfetched = str(urllib.parse.urlparse(link.get('href')))
+            urlfetched = urllib.parse.urlparse(link.get('href')).geturl()
             if (not urlfetched.endswith(extensions)):
                 frontier_manager.add_url(urlfetched)
-                print(link.get('href'))
+                print(urlfetched)
             else:
                 print("NOT ADDED!!!!!!!!!!!!!!!!!!!     " + urlfetched)
 
@@ -134,7 +134,7 @@ class SeleniumSpider(object):
                         # if pictures need to be downloaded, replace extensions instead of documents_with_data
                         extension = self.endswithWhich(urlfetched, documents_with_data)
                         if not extension:  # if it not has an extension
-                            frontier_manager.add_url(urlfetched)
+                            frontier_manager.add_url(urlfetched.geturl())
                         else:
                             data = download_helper.download(urlfetched)
                             DBHandler.insert_page_data("page_id", extension, data) # TODO pass page_id to store properly
