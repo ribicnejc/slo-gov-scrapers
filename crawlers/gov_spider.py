@@ -7,15 +7,17 @@ from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
 from managers import frontier_manager
 from utils import settings
+from utils import download_helper
 from utils.postgres_handler import DBHandler
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
 
-documents_with_data = (".pdf", ".doc", ".docx", ".ppt", ".pptx.")
-jpg = ".jpg"
+documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.")
+jpg = (".JPG", ".PNG", ".TIFF") # TODO fill
 extensions = documents_with_data + jpg
+
 
 def stale_decorator(f):
     def wrapper(*args, **kwargs):
@@ -122,19 +124,32 @@ class SeleniumSpider(object):
         for script in page.findAll('script'):
 
             for line in str(script).split("\n"):
-                #parsin urls from line
+                # parsin urls from line
                 urls_parsed_from_line = re.findall(
                     'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line);
 
-                if (urls_parsed_from_line > 0):
+                if (len(urls_parsed_from_line) > 0):
                     for i in urls_parsed_from_line:
-                        if not self.endswithany(urllib.parse.urlparse(i), extensions):
+                        urlfetched = urllib.parse.urlparse(i)
+                        # if pictures need to be downloaded, replace extensions instead of documents_with_data
+                        extension = self.endswithWhich(urlfetched, documents_with_data)
+                        if not extension:  # if it not has an extension
                             frontier_manager.add_url(urlfetched)
+                        else:
+                            data = download_helper.download(urlfetched)
+                            DBHandler.insert_page_data("page_id", extension, data) # TODO pass page_id to store properly
+
 
                             # print frontier_manager.frontier.frontier
 
-    def endswithany(s, exts):
+    def endswithany(self, s, exts):
         for i in exts:
-            if s.endswith(i):
+            if str(s).endswith(i):
                 return True
         return False
+
+    def endswithWhich(self, s, exts):
+        for i in exts:
+            if str(s).endswith(i):
+                return i
+        return None

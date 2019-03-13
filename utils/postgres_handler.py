@@ -34,10 +34,21 @@ class DBHandler(object):
 
     def insert_page_data(self, page_id, data_type_code, data):
         cursor = self.conn.cursor()
+        binary = psycopg2.Binary(data) # binary read is implemented in download, fix if bad practice
+
         SQL = "INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES (%s, %s, %s);"
-        values = (page_id, data_type_code, data)
+        values = (page_id, data_type_code, binary)
+        cursor.execute(SQL, values)
+
+        self.conn.commit()
+
+    def insert_page_data_string(self, page_id, data_type_code, datastring):
+        cursor = self.conn.cursor()
+        SQL = "INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES (%s, %s, %s);"
+        values = (page_id, data_type_code, datastring)
         cursor.execute(SQL, values)
         self.conn.commit()
+
 
     def insert_page_type(self, code):
         cursor = self.conn.cursor()
