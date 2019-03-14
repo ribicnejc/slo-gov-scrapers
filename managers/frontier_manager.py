@@ -4,6 +4,7 @@ from queue import Queue
 class Frontier(object):
     def __init__(self):
         self.frontier = Queue()
+        self.already_added = set()
 
     def get_next(self):
         return self.frontier.get()
@@ -12,16 +13,16 @@ class Frontier(object):
         return self.frontier.empty()
 
     def add_url(self, url):
-        self.frontier.put(url)
+        if url not in self.already_added:
+            self.frontier.put(url)
+            self.already_added.add(url)
 
 
 frontier = Frontier()
-visited = set()
 
 
 def get_next():
     url = frontier.get_next()
-    visited.add(url)
     return url
 
 
@@ -30,10 +31,7 @@ def is_not_empty():
 
 
 def add_url(url):
-    # to prevent duplicates
-    if url not in visited:
-        if url not in frontier:
-            frontier.add_url(url)
+    frontier.add_url(url)
 
 
 def plant_seeds():
