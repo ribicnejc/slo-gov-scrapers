@@ -1,13 +1,24 @@
-# TODOs
+TODOs
 
 # Nejc
 * specify requirements for scraping
 * robots txt library parser
+* robots.txt sitemaps
+* frontier looping fail
+* url locker for frontier
 
 # Miha
 * writing report...
 * link extract
 * extract images -> download them and also pdfs ppts,...
+- case1: download images module
+- case2: download docs module
+* make methods usable for inserting to postgresDB
+
+
+
+* don't fetch js or css objects )
+* 
 
 
 

@@ -7,11 +7,16 @@ from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
 from managers import frontier_manager
 from utils import settings
+from utils import download_helper
 from utils.postgres_handler import DBHandler
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
+
+documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.")
+jpg = (".JPG", ".PNG", ".TIFF")  # TODO fill
+extensions = documents_with_data + jpg
 
 
 def stale_decorator(f):
@@ -102,41 +107,59 @@ class SeleniumSpider(object):
 
     def find_links(self, page):
 
-        extensions = (".js, .pdf, .jpg, .png, .ppt, .pptx")
         page = BeautifulSoup(self.driver.page_source)
 
         print(page.findAll('script'))
 
         for link in page.findAll('', attrs={'href': re.compile("^https?://")}):
 
-
             # print urlparse.urlparse(link.get('href'))
-            urlfetched = str(urllib.parse.urlparse(link.get('href')))
-            if(not urlfetched.endswith(extensions)):
+            urlfetched = urllib.parse.urlparse(link.get('href')).geturl()
+            if (not urlfetched.endswith(extensions)):
                 frontier_manager.add_url(urlfetched)
-                print (link.get('href'))
+                print(urlfetched)
             else:
                 print("NOT ADDED!!!!!!!!!!!!!!!!!!!     " + urlfetched)
 
-
-
-
-        #print frontier_manager.frontier.frontier
+        # print frontier_manager.frontier.frontier
 
         for script in page.findAll('script'):
 
             for line in str(script).split("\n"):
-                if(len(re.split("^https?://", line))>1):
-                    print(line)
-                    if (not self.parse_local(line).endswith(extensions)):
-                        frontier_manager.add_url(urlfetched)
-                        print(link.get('href'))
+                # parsin urls from line
+                urls_parsed_from_line = re.findall(
+                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line);
 
+                if (len(urls_parsed_from_line) > 0):
+                    for i in urls_parsed_from_line:
+                        urlfetched = urllib.parse.urlparse(i)
+                        # if pictures need to be downloaded, replace extensions instead of documents_with_data
+                        extension = self.endswithWhich(urlfetched, documents_with_data)
+                        if not extension:  # if it not has an extension
+                            frontier_manager.add_url(urlfetched.geturl())
+                        else:
+                            self.download_document(urlfetched, extension)
 
+                            # print frontier_manager.frontier.frontier
 
+    def endswithany(self, s, exts):
+        for i in exts:
+            if str(s).endswith(i):
+                return True
+        return False
 
-        #print frontier_manager.frontier.frontier
+    def endswithWhich(self, s, exts):
+        for i in exts:
+            if str(s).endswith(i):
+                return i
+        return None
 
-    def parse_local(self, s):
-        # parse link out of the line containing link...
-        return "NOT IMPLEMENTED"
+    def download_image(self, url, page_id, filename, content_type):
+        data = download_helper.download(url)
+        DBHandler.insert_image(page_id, filename, content_type, data)  # TODO pass page_id to store properly
+        return
+
+    def download_document(self, url, page_id, extension):
+        data = download_helper.download(url)
+        DBHandler.insert_page_data(page_id, extension, data)  # TODO pass page_id to store properly
+        return
