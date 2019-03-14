@@ -53,6 +53,9 @@ class SeleniumSpider(object):
     def check_robots(self):
         # pass
         rp = RobotFileParser()
+
+        self.url = "https://www.tripadvisor.com/"
+
         rp.set_url(self.url + "robots.txt")
         rp.read()
         self.robots_content = rp.__str__()
@@ -68,15 +71,14 @@ class SeleniumSpider(object):
         self.save_site()
 
         # 3 fetch all urls
+        # 4 put urls to frontier
         self.find_links(self.driver.page_source)
 
-        # 4 put urls to frontier
-        # 5 read binary images or content
-        # print (self.driver.page_source)
+        # 5 fetch images
 
+        # 6 fetch binary files (pdf, ppts, docx,...)
 
-
-        # 6 get next url from frontier and repeat process
+        # 7 get next url from frontier and repeat process
         if frontier_manager.is_not_empty():
             self.change_url(frontier_manager.get_next())
         else:
