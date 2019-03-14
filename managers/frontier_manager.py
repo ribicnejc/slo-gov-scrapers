@@ -32,7 +32,8 @@ def is_not_empty():
 def add_url(url):
     # to prevent duplicates
     if url not in visited:
-        frontier.add_url(url)
+        if url not in frontier:
+            frontier.add_url(url)
 
 
 def plant_seeds():
