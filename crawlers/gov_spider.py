@@ -15,7 +15,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
 
 documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.")
-jpg = (".JPG", ".PNG", ".TIFF") # TODO fill
+jpg = (".JPG", ".PNG", ".TIFF")  # TODO fill
 extensions = documents_with_data + jpg
 
 
@@ -79,8 +79,6 @@ class SeleniumSpider(object):
         # 5 read binary images or content
         # print (self.driver.page_source)
 
-
-
         # 6 get next url from frontier and repeat process
         if frontier_manager.is_not_empty():
             self.change_url(frontier_manager.get_next())
@@ -136,9 +134,7 @@ class SeleniumSpider(object):
                         if not extension:  # if it not has an extension
                             frontier_manager.add_url(urlfetched.geturl())
                         else:
-                            data = download_helper.download(urlfetched)
-                            DBHandler.insert_page_data("page_id", extension, data) # TODO pass page_id to store properly
-
+                            self.download_document(urlfetched, extension)
 
                             # print frontier_manager.frontier.frontier
 
@@ -153,3 +149,13 @@ class SeleniumSpider(object):
             if str(s).endswith(i):
                 return i
         return None
+
+    def download_image(self, url, page_id, filename, content_type):
+        data = download_helper.download(url)
+        DBHandler.insert_image(page_id, filename, content_type, data)  # TODO pass page_id to store properly
+        return
+
+    def download_document(self, url, page_id, extension):
+        data = download_helper.download(url)
+        DBHandler.insert_page_data(page_id, extension, data)  # TODO pass page_id to store properly
+        return

@@ -1,4 +1,4 @@
-# TODOs
+TODOs
 
 # Nejc
 * specify requirements for scraping
@@ -11,6 +11,8 @@
 * writing report...
 * link extract
 * extract images -> download them and also pdfs ppts,...
+- case1: download images module
+- case2: download docs module
 * make methods usable for inserting to postgresDB
 
 
