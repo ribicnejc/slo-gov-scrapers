@@ -14,9 +14,10 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
 
-documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.")
-jpg = (".JPG", ".PNG", ".TIFF")  # TODO fill
-extensions = documents_with_data + jpg
+miscexts = (".js", ".css")
+documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.", ".doc", ".docx", ".pdf", ".ppt", ".pptx.")
+imgexts = (".JPG", ".PNG", ".TIFF", ".GIF", ".jpg", ".png", ".tiff", ".gif")  # TODO fill
+extensions = documents_with_data + imgexts + miscexts
 
 
 def stale_decorator(f):
@@ -77,9 +78,12 @@ class SeleniumSpider(object):
 
         # 3 fetch all urls
         # 4 put urls to frontier
-        self.find_links(self.driver.page_source)
+
+        imageLinks = self.find_links(self.driver.page_source)
 
         # 5 fetch images
+
+        self.find_images(self.driver.page_source)
 
         # 6 fetch binary files (pdf, ppts, docx,...)
 
@@ -107,6 +111,8 @@ class SeleniumSpider(object):
 
     def find_links(self, page):
 
+        imageUrls = []
+
         page = BeautifulSoup(self.driver.page_source)
 
         print(page.findAll('script'))
@@ -115,11 +121,17 @@ class SeleniumSpider(object):
 
             # print urlparse.urlparse(link.get('href'))
             urlfetched = urllib.parse.urlparse(link.get('href')).geturl()
-            if (not urlfetched.endswith(extensions)):
+
+            docext = self.endswithWhich(urlfetched, extensions)
+
+            if (not docext):
                 frontier_manager.add_url(urlfetched)
                 print(urlfetched)
             else:
-                print("NOT ADDED!!!!!!!!!!!!!!!!!!!     " + urlfetched)
+                if docext in documents_with_data:
+                    self.download_document(urlfetched, docext)
+                elif docext in imgexts:
+                    imageUrls.append(urlfetched)
 
         # print frontier_manager.frontier.frontier
 
@@ -132,23 +144,46 @@ class SeleniumSpider(object):
 
                 if (len(urls_parsed_from_line) > 0):
                     for i in urls_parsed_from_line:
-                        urlfetched = urllib.parse.urlparse(i)
+                        urlfetched = urllib.parse.urlparse(i).geturl()
                         # if pictures need to be downloaded, replace extensions instead of documents_with_data
-                        extension = self.endswithWhich(urlfetched, documents_with_data)
-                        if not extension:  # if it not has an extension
-                            frontier_manager.add_url(urlfetched.geturl())
+                        docext = self.endswithWhich(urlfetched, extensions)
+                        if not docext:  # if it not has an extension
+                            frontier_manager.add_url(urlfetched)
                         else:
-                            self.download_document(urlfetched, extension)
+                            if docext in documents_with_data:
+                                self.download_document(urlfetched, docext)
+                            elif docext in imgexts:
+                                imageUrls.append(urlfetched)
 
-                            # print frontier_manager.frontier.frontier
+                                # print frontier_manager.frontier.frontier
+
+        return imageUrls
+
+    def find_images(self, page):
+
+        page = BeautifulSoup(self.driver.page_source)
+
+        images = []
+        for img in page.findAll('img'):
+            images.append(img.get('src'))
+
+        print(images)
 
     def endswithany(self, s, exts):
+        if "?" in s:
+            index = s.find("?")
+            s = s[:index]
+
         for i in exts:
             if str(s).endswith(i):
                 return True
         return False
 
     def endswithWhich(self, s, exts):
+        if "?" in s:
+            index = s.find("?")
+            s = s[:index]
+
         for i in exts:
             if str(s).endswith(i):
                 return i
