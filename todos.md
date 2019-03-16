@@ -15,10 +15,8 @@ TODOs
 - case2: download docs module
 * make methods usable for inserting to postgresDB
 
-
-
 * don't fetch js or css objects )
-* 
+* crawl text from html and save to DB
 
 
 
