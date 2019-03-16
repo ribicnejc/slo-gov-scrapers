@@ -2,6 +2,7 @@ import time
 from bs4 import BeautifulSoup
 import re
 import urllib
+import requests
 
 from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
@@ -40,6 +41,7 @@ class SeleniumSpider(object):
     def __init__(self, url):
         self.url = url
         self.sitemaps = set()
+        self.disallowed_urls = set()
         self.crawl_delay = 1
         self.robots_content = ""
         # self.db_data = DBHandler()
@@ -59,13 +61,20 @@ class SeleniumSpider(object):
     def check_robots(self):
         # pass
         rp = RobotFileParser()
-
-        self.url = "https://www.tripadvisor.com/"
-
         rp.set_url(self.url + "robots.txt")
         rp.read()
         self.robots_content = rp.__str__()
         self.crawl_delay = rp.crawl_delay('*')
+        r = requests.get(self.url + "robots.txt")
+        content = r.content.decode('utf-8').split('\n')
+        for el in content:
+            if 'Sitemap' in el:
+                self.sitemaps.add(el.replace('Sitemap: ', ''))
+
+        if rp.default_entry is not None:
+            if rp.default_entry.rulelines is not None:
+                for rule in rp.default_entry.rulelines:
+                    rule = 0
         # todo check for excluded sites
 
     # @stale_decorator
@@ -82,7 +91,6 @@ class SeleniumSpider(object):
         imageLinks = self.find_links(self.driver.page_source)
 
         # 5 fetch images
-
         self.find_images(self.driver.page_source)
 
         # 6 fetch binary files (pdf, ppts, docx,...)
@@ -94,6 +102,8 @@ class SeleniumSpider(object):
             self.driver.close()
 
     def change_url(self, url):
+        self.sitemaps = set()
+        self.sitemaps = set()
         time.sleep(settings.TIME_BETWEEN_REQUESTS)
         self.driver.get(url)
         self.scrap_page()

@@ -5,3 +5,4 @@ robots-txt-parser
 psycopg2
 postgres
 beautifulsoup4
+requests

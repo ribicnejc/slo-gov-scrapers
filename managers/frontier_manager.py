@@ -35,6 +35,7 @@ def add_url(url):
 
 
 def plant_seeds():
+    frontier.add_url("http://www.e-prostor.gov.si/")
     frontier.add_url("http://www.sova.gov.si/")
     frontier.add_url("http://www.sova.gov.si/si/delovno_podrocje/")
     frontier.add_url("http://www.arso.gov.si/")

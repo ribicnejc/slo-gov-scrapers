@@ -1,8 +1,8 @@
-NUMBER_OF_SPIDERS = 2
+NUMBER_OF_SPIDERS = 1
 
 TIME_BETWEEN_REQUESTS = 1
 
-HEADLESS_BROWSER = False
+HEADLESS_BROWSER = True
 
 
 # vsi linki iz sitemape damo v frontier... sitemap ima ful urljev...

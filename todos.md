@@ -1,10 +1,8 @@
 TODOs
 
 # Nejc
-* specify requirements for scraping
 * robots txt library parser
 * robots.txt sitemaps
-* frontier looping fail
 * url locker for frontier
 
 # Miha
