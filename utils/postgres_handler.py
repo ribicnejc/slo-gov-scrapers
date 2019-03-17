@@ -34,7 +34,7 @@ class DBHandler(object):
 
     def insert_page_data(self, page_id, data_type_code, data):
         cursor = self.conn.cursor()
-        binary = psycopg2.Binary(data) # binary read is implemented in download, fix if bad practice
+        binary = psycopg2.Binary(data)  # binary read is implemented in download, fix if bad practice
 
         SQL = "INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES (%s, %s, %s);"
         values = (page_id, data_type_code, binary)
@@ -48,7 +48,6 @@ class DBHandler(object):
         values = (page_id, data_type_code, datastring)
         cursor.execute(SQL, values)
         self.conn.commit()
-
 
     def insert_page_type(self, code):
         cursor = self.conn.cursor()
@@ -69,8 +68,15 @@ class DBHandler(object):
         SQL = """SELECT id
 	             FROM crawldb.site
 	             WHERE domain=%s;"""
-        values=(url_domain_name,)
+        values = (url_domain_name,)
         cursor.execute(SQL, values)
         return cursor.fetchone()[0]
 
-
+    def get_page_id(self, url):
+        cursor = self.conn.cursor()
+        SQL = """SELECT id
+                 FROM crawldb.page
+                 WHERE url=%s;"""
+        values = (url,)
+        cursor.execute(SQL, values)
+        return cursor.fetchone()[0]
