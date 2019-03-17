@@ -6,6 +6,7 @@ import requests
 from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
 from managers import frontier_manager
+from managers import binary_data_manager
 from managers.frontier_manager import ScrapUrl
 from utils import settings
 from utils import download_helper
@@ -49,6 +50,9 @@ class SeleniumSpider(object):
         self.sitemap_content = ""
 
         self.db_data = DBHandler()
+
+        self.bin_manager = binary_data_manager.Binary_manager()
+
         chrome_options = Options()
         if settings.HEADLESS_BROWSER:
             chrome_options.add_argument("--headless")
@@ -57,7 +61,7 @@ class SeleniumSpider(object):
         driver = webdriver.Chrome(
             chrome_options=chrome_options,
             service_args=service_args)
-        driver.get(url)
+        driver.get(self.url)
         driver.implicitly_wait(2)
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 5)
@@ -95,9 +99,11 @@ class SeleniumSpider(object):
         # 2 save site
         self.save_site(self.driver.current_url)  # here is current saved domain
 
+        self.bin_manager.reset()  # inserts take place in link searches...
+
         # 3 fetch all urls
-        urls = self.find_links(
-            self.driver.page_source)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
+        urls = self.find_links(self.driver.page_source,
+                               self.driver.current_url)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
 
         # 4 put urls to frontier
         for url in urls:
@@ -112,6 +118,7 @@ class SeleniumSpider(object):
         self.find_images(self.driver.page_source)
 
         # 7 fetch binary files (pdf, ppts, docx,...)
+        # shrani images v pb tle
 
         # 8 get next url from frontier and repeat process
         if frontier_manager.is_not_empty():
@@ -171,15 +178,17 @@ class SeleniumSpider(object):
     def get_domain_name(url):
         return url.split('//')[-1].split('/')[0]
 
-    def find_links(self, page):
+    def find_links(self, page_bd, current_curl):  # vrni vse frontier urlje, pa shrani image v bazo...
 
-        imageUrls = []
+        urllist = []
 
-        page = BeautifulSoup(self.driver.page_source)
+        page_id = self.db_data.get_page_id(current_curl)
 
-        print(page.findAll('script'))
+        page_body = BeautifulSoup(page_bd)
 
-        for link in page.findAll('', attrs={'href': re.compile("^https?://")}):
+        print(page_body.findAll('script'))
+
+        for link in page_body.findAll('', attrs={'href': re.compile("^https?://")}):
 
             # print urlparse.urlparse(link.get('href'))
             urlfetched = urllib.parse.urlparse(link.get('href')).geturl()
@@ -187,17 +196,19 @@ class SeleniumSpider(object):
             docext = self.endswithWhich(urlfetched, extensions)
 
             if (not docext):
-                frontier_manager.add_url(ScrapUrl(self.parent, urlfetched))
+                frontier_manager.add_url(self.parent, urlfetched)
+                urllist.append(urlfetched)
                 print(urlfetched)
             else:
                 if docext in documents_with_data:
-                    self.download_document(urlfetched, docext)
+                    # self.download_document(urlfetched, docext)
+                    self.bin_manager.insert_document((urlfetched, page_id, docext))  # TODO insert also pageId and other data
                 elif docext in imgexts:
-                    imageUrls.append(urlfetched)
+                    self.bin_manager.insert_image((urlfetched, page_id, docext))  # TODO insert also pageId and other data
 
         # print frontier_manager.frontier.frontier
 
-        for script in page.findAll('script'):
+        for script in page_body.findAll('script'):
 
             for line in str(script).split("\n"):
                 # parsin urls from line
@@ -210,16 +221,19 @@ class SeleniumSpider(object):
                         # if pictures need to be downloaded, replace extensions instead of documents_with_data
                         docext = self.endswithWhich(urlfetched, extensions)
                         if not docext:  # if it not has an extension
-                            frontier_manager.add_url(ScrapUrl(self.parent, urlfetched))
+                            frontier_manager.add_url(self.parent, urlfetched)  # URLs for frontier...
+                            urllist.append(urlfetched)
                         else:
                             if docext in documents_with_data:
-                                self.download_document(urlfetched, docext)
+                                # self.download_document(urlfetched, docext)
+                                self.bin_manager.insert_document(
+                                    (urlfetched, page_id, docext))  # TODO insert also pageId and other data
                             elif docext in imgexts:
-                                imageUrls.append(urlfetched)
+                                self.bin_manager.insert_image((urlfetched, page_id, docext))  # TODO insert also pageId and other data
 
                                 # print frontier_manager.frontier.frontier
 
-        return imageUrls
+        return urllist
 
     def find_images(self, page):
 

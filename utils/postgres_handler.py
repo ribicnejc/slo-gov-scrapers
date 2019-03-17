@@ -70,7 +70,11 @@ class DBHandler(object):
 	             WHERE domain=%s;"""
         values = (url_domain_name,)
         cursor.execute(SQL, values)
-        return cursor.fetchone()[0]
+        s = cursor.fetchone()
+        if s != None:
+            return s[0]
+        else:
+            return None
 
     def get_page_id(self, url):
         cursor = self.conn.cursor()
