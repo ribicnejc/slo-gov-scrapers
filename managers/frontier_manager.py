@@ -5,6 +5,7 @@ class Frontier(object):
     def __init__(self):
         self.frontier = Queue()
         self.already_added = set()
+        self.disallowed_urls = set()
 
     def get_next(self):
         return self.frontier.get()
@@ -14,8 +15,12 @@ class Frontier(object):
 
     def add_url(self, url):
         if url not in self.already_added:
-            self.frontier.put(url)
-            self.already_added.add(url)
+            if url not in self.disallowed_urls:
+                self.frontier.put(url)
+                self.already_added.add(url)
+
+    def add_disallowed_url(self, url):
+        self.disallowed_urls.add(url)
 
 
 frontier = Frontier()
@@ -34,6 +39,10 @@ def add_url(url):
     frontier.add_url(url)
 
 
+def add_disallowed_url(url):
+    frontier.add_disallowed_url(url)
+
+
 def plant_seeds():
     frontier.add_url("http://www.e-prostor.gov.si/")
     frontier.add_url("http://www.sova.gov.si/")
@@ -45,6 +54,3 @@ def plant_seeds():
     frontier.add_url("http://www.upravneenote.gov.si/")
     frontier.add_url("http://prostor3.gov.si/javni/login.jsp?jezik=sl")
     frontier.add_url("http://www.mju.gov.si/")
-
-# todo consider about locking url
-# class FrontierElement(object):

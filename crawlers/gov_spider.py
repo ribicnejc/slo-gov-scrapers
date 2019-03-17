@@ -1,11 +1,11 @@
 import time
-from bs4 import BeautifulSoup
 import re
 import urllib
 import requests
 
 from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
+from xml.etree import ElementTree
 from managers import frontier_manager
 from utils import settings
 from utils import download_helper
@@ -59,7 +59,6 @@ class SeleniumSpider(object):
         self.wait = WebDriverWait(self.driver, 5)
 
     def check_robots(self):
-        # pass
         rp = RobotFileParser()
         rp.set_url(self.url + "robots.txt")
         rp.read()
@@ -74,8 +73,14 @@ class SeleniumSpider(object):
         if rp.default_entry is not None:
             if rp.default_entry.rulelines is not None:
                 for rule in rp.default_entry.rulelines:
-                    rule = 0
-        # todo check for excluded sites
+                    if rule and not rule.allowance:
+                        frontier_manager.add_disallowed_url(self.url[0:-1] + rule.path)
+
+        for sitemap in self.sitemaps:
+            r = requests.get(sitemap)
+            e = BeautifulSoup(r.content)
+            for elt in e.find_all('loc'):
+                frontier_manager.add_url(elt.text)
 
     # @stale_decorator
     def scrap_page(self):
