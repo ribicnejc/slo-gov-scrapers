@@ -39,13 +39,13 @@ def stale_decorator(f):
 
 class SeleniumSpider(object):
     def __init__(self, url):
-        self.url = url
+        self.url = url.url
         self.sitemaps = set()
         self.disallowed_urls = set()
         self.crawl_delay = 1
 
         self.robots_content = ""
-        self.parent = ""
+        self.parent = url.parent
         self.sitemap_content = ""
 
         self.db_data = DBHandler()
