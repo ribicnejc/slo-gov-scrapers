@@ -1,11 +1,12 @@
 import time
-from bs4 import BeautifulSoup
 import re
 import urllib
+import requests
 
 from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
 from managers import frontier_manager
+from managers.frontier_manager import ScrapUrl
 from utils import settings
 from utils import download_helper
 from utils.postgres_handler import DBHandler
@@ -40,9 +41,14 @@ class SeleniumSpider(object):
     def __init__(self, url):
         self.url = url
         self.sitemaps = set()
+        self.disallowed_urls = set()
         self.crawl_delay = 1
+
         self.robots_content = ""
-        # self.db_data = DBHandler()
+        self.parent = ""
+        self.sitemap_content = ""
+
+        self.db_data = DBHandler()
         chrome_options = Options()
         if settings.HEADLESS_BROWSER:
             chrome_options.add_argument("--headless")
@@ -57,57 +63,113 @@ class SeleniumSpider(object):
         self.wait = WebDriverWait(self.driver, 5)
 
     def check_robots(self):
-        # pass
         rp = RobotFileParser()
-
-        self.url = "https://www.tripadvisor.com/"
-
         rp.set_url(self.url + "robots.txt")
         rp.read()
-        self.robots_content = rp.__str__()
         self.crawl_delay = rp.crawl_delay('*')
-        # todo check for excluded sites
+        r = requests.get(self.url + "robots.txt")
+        content = r.content.decode('utf-8').split('\n')
+        self.robots_content = content
+        for el in content:
+            if 'Sitemap' in el:
+                self.sitemaps.add(el.replace('Sitemap: ', ''))
 
-    # @stale_decorator
+        if rp.default_entry is not None:
+            if rp.default_entry.rulelines is not None:
+                for rule in rp.default_entry.rulelines:
+                    if rule and not rule.allowance:
+                        frontier_manager.add_disallowed_url(self.url[0:-1] + rule.path)
+
+        for sitemap in self.sitemaps:
+            r = requests.get(sitemap)
+            self.sitemap_content = self.sitemap_content + "," + r.content.decode('utf-8')
+            e = BeautifulSoup(r.content)
+            for elt in e.find_all('loc'):
+                self.insert_page(True, elt.text)
+                frontier_manager.add_url(self.driver.current_url, elt.text)
+
     def scrap_page(self):
         # 1 check robots
-        self.check_robots()
+        self.check_robots()  # robots save sitemaps to frontier in db
 
         # 2 save site
-        self.save_site()
+        self.save_site(self.driver.current_url)  # here is current saved domain
 
         # 3 fetch all urls
+        urls = self.find_links(
+            self.driver.page_source)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
+
         # 4 put urls to frontier
+        for url in urls:
+            if url not in frontier_manager.frontier.disallowed_urls:
+                self.insert_page(True, url)
+                frontier_manager.add_url(self.driver.current_url, url)
 
-        imageLinks = self.find_links(self.driver.page_source)
+        # 5 make connection to parent url
+        self.save_link(self.url, self.parent)
 
-        # 5 fetch images
-
+        # 6 fetch images
         self.find_images(self.driver.page_source)
 
-        # 6 fetch binary files (pdf, ppts, docx,...)
+        # 7 fetch binary files (pdf, ppts, docx,...)
 
-        # 7 get next url from frontier and repeat process
+        # 8 get next url from frontier and repeat process
         if frontier_manager.is_not_empty():
             self.change_url(frontier_manager.get_next())
         else:
             self.driver.close()
 
     def change_url(self, url):
+        self.sitemaps = set()
+        self.sitemap_content = ""
         time.sleep(settings.TIME_BETWEEN_REQUESTS)
+        self.url = url.url
+        self.parent = url.parent_url
         self.driver.get(url)
         self.scrap_page()
 
-    def save_site(self):
-        return
-        # todo domain name etc...
-        domain = self.driver.current_url
+    def save_site(self, url):
+        domain = self.get_domain_name(url)
+        print("Saving site: " + domain)
         robots_content = self.robots_content
         sitemap_content = self.driver.page_source
         self.db_data.insert_site(domain, robots_content, sitemap_content)
 
-    def insert_page(self):
-        site_id = self.db_data.get_site_id(self.driver.current_url)
+    def insert_page(self, frontier, url):
+        site_id = self.db_data.get_site_id(self.get_domain_name(url))
+
+        # TODO duplicate???
+        page_type_code = ""
+        r = requests.head(url)
+        content_type = r.headers['content-type']
+        if 'html' in content_type:
+            page_type_code = 'HTML'
+
+        if 'application' in content_type:
+            page_type_code = 'BINARY'
+
+        if frontier:
+            page_type_code = 'FRONTIER'
+
+        if 300 < r.status_code < 310:
+            page_type_code = "303"
+
+        url = r.url
+        html_content = self.driver.page_source
+        if 'HTML' not in page_type_code:
+            html_content = None
+
+        http_status_code = r.status_code
+        self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
+
+    def save_link(self, url, parent_url):
+        from_page = self.db_data.get_page_id(parent_url)  # get parent id
+        to_page = self.db_data.get_page_id(url)  # get current id
+        self.db_data.insert_link(from_page, to_page)
+
+    @staticmethod
+    def get_domain_name(url):
+        return url.split('//')[-1].split('/')[0]
 
     def find_links(self, page):
 
@@ -125,7 +187,7 @@ class SeleniumSpider(object):
             docext = self.endswithWhich(urlfetched, extensions)
 
             if (not docext):
-                frontier_manager.add_url(urlfetched)
+                frontier_manager.add_url(ScrapUrl(self.parent, urlfetched))
                 print(urlfetched)
             else:
                 if docext in documents_with_data:
@@ -148,7 +210,7 @@ class SeleniumSpider(object):
                         # if pictures need to be downloaded, replace extensions instead of documents_with_data
                         docext = self.endswithWhich(urlfetched, extensions)
                         if not docext:  # if it not has an extension
-                            frontier_manager.add_url(urlfetched)
+                            frontier_manager.add_url(ScrapUrl(self.parent, urlfetched))
                         else:
                             if docext in documents_with_data:
                                 self.download_document(urlfetched, docext)
@@ -189,12 +251,14 @@ class SeleniumSpider(object):
                 return i
         return None
 
-    def download_image(self, url, page_id, filename, content_type):
+    @staticmethod
+    def download_image(url, page_id, filename, content_type):
         data = download_helper.download(url)
         DBHandler.insert_image(page_id, filename, content_type, data)  # TODO pass page_id to store properly
         return
 
-    def download_document(self, url, page_id, extension):
+    @staticmethod
+    def download_document(url, page_id, extension):
         data = download_helper.download(url)
         DBHandler.insert_page_data(page_id, extension, data)  # TODO pass page_id to store properly
         return
