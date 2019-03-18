@@ -1,28 +1,12 @@
 TODOs
 
 # Nejc
-* robots txt library parser
-* robots.txt sitemaps
-* url locker for frontier
+* Duplicate issue
+* Test databse
 
 # Miha
-* writing report...
-* link extract
-* extract images -> download them and also pdfs ppts,...
-- case1: download images module
-- case2: download docs module
-* make methods usable for inserting to postgresDB
-
-* don't fetch js or css objects )
-* crawl text from html and save to DB
-
-
-
-# Other
-* Poročilo
-* Robots.txt
-* paralelno izvajanje
-
+* Insert image/pdfs to database with correct IDs
+* Extract text from html tags
 
         # sitemaps (robots.txt), shranmo slike, ce dela js,
         # htmlunit hitrejsi od seleniuma
