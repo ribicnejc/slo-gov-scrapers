@@ -39,16 +39,19 @@ def stale_decorator(f):
 
 class SeleniumSpider(object):
     def __init__(self, url):
-        self.url = url
+        self.url = url.url
         self.sitemaps = set()
         self.disallowed_urls = set()
         self.crawl_delay = 1
 
         self.robots_content = ""
-        self.parent = ""
+        self.parent = url.parent
         self.sitemap_content = ""
 
         self.db_data = DBHandler()
+
+        self.bin_manager = binary_data_manager.Binary_manager()
+
         chrome_options = Options()
         if settings.HEADLESS_BROWSER:
             chrome_options.add_argument("--headless")
@@ -57,7 +60,7 @@ class SeleniumSpider(object):
         driver = webdriver.Chrome(
             chrome_options=chrome_options,
             service_args=service_args)
-        driver.get(url)
+        driver.get(self.url)
         driver.implicitly_wait(2)
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 5)
@@ -95,9 +98,11 @@ class SeleniumSpider(object):
         # 2 save site
         self.save_site(self.driver.current_url)  # here is current saved domain
 
+        self.bin_manager.reset()  # inserts take place in link searches...
+
         # 3 fetch all urls
-        urls = self.find_links(
-            self.driver.page_source)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
+        urls = self.find_links(self.driver.page_source,
+                               self.driver.current_url)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
 
         # 4 put urls to frontier
         for url in urls:
@@ -109,9 +114,10 @@ class SeleniumSpider(object):
         self.save_link(self.url, self.parent)
 
         # 6 fetch images
-        self.find_images(self.driver.page_source)
+        self.find_images(self.driver.page_source, self.driver.current_url)
 
         # 7 fetch binary files (pdf, ppts, docx,...)
+        # shrani images v pb tle
 
         # 8 get next url from frontier and repeat process
         if frontier_manager.is_not_empty():
@@ -162,6 +168,8 @@ class SeleniumSpider(object):
         http_status_code = r.status_code
         self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
 
+        self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
+
     def save_link(self, url, parent_url):
         from_page = self.db_data.get_page_id(parent_url)  # get parent id
         to_page = self.db_data.get_page_id(url)  # get current id
@@ -171,15 +179,17 @@ class SeleniumSpider(object):
     def get_domain_name(url):
         return url.split('//')[-1].split('/')[0]
 
-    def find_links(self, page):
+    def find_links(self, page_bd, current_curl):  # vrni vse frontier urlje, pa shrani image v bazo...
 
-        imageUrls = []
+        urllist = []
 
-        page = BeautifulSoup(self.driver.page_source)
+        page_id = self.db_data.get_page_id(current_curl)
 
-        print(page.findAll('script'))
+        page_body = BeautifulSoup(page_bd)
 
-        for link in page.findAll('', attrs={'href': re.compile("^https?://")}):
+        print(page_body.findAll('script'))
+
+        for link in page_body.findAll('', attrs={'href': re.compile("^https?://")}):
 
             # print urlparse.urlparse(link.get('href'))
             urlfetched = urllib.parse.urlparse(link.get('href')).geturl()
@@ -187,17 +197,21 @@ class SeleniumSpider(object):
             docext = self.endswithWhich(urlfetched, extensions)
 
             if (not docext):
-                frontier_manager.add_url(ScrapUrl(self.parent, urlfetched))
+                frontier_manager.add_url(self.parent, urlfetched)
+                urllist.append(urlfetched)
                 print(urlfetched)
             else:
                 if docext in documents_with_data:
-                    self.download_document(urlfetched, docext)
+                    # self.download_document(urlfetched, docext)
+                    self.bin_manager.insert_document(
+                        (urlfetched, page_id, docext))  # TODO insert also pageId and other data
                 elif docext in imgexts:
-                    imageUrls.append(urlfetched)
+                    self.bin_manager.insert_image(
+                        (urlfetched, page_id, docext))  # TODO insert also pageId and other data
 
         # print frontier_manager.frontier.frontier
 
-        for script in page.findAll('script'):
+        for script in page_body.findAll('script'):
 
             for line in str(script).split("\n"):
                 # parsin urls from line
@@ -210,24 +224,32 @@ class SeleniumSpider(object):
                         # if pictures need to be downloaded, replace extensions instead of documents_with_data
                         docext = self.endswithWhich(urlfetched, extensions)
                         if not docext:  # if it not has an extension
-                            frontier_manager.add_url(ScrapUrl(self.parent, urlfetched))
+                            frontier_manager.add_url(self.parent, urlfetched)  # URLs for frontier...
+                            urllist.append(urlfetched)
                         else:
                             if docext in documents_with_data:
-                                self.download_document(urlfetched, docext)
+                                # self.download_document(urlfetched, docext)
+                                # ( url, page id, extension)
+                                self.bin_manager.insert_document(
+                                    (urlfetched, page_id, docext))  # TODO insert also pageId and other data
                             elif docext in imgexts:
-                                imageUrls.append(urlfetched)
+                                self.bin_manager.insert_image(
+                                    (urlfetched, page_id, docext))  # TODO insert also pageId and other data
 
                                 # print frontier_manager.frontier.frontier
 
-        return imageUrls
+        return urllist
 
-    def find_images(self, page):
+    def find_images(self, page, current_curl):
+
+        page_id = self.db_data.get_page_id(current_curl)
 
         page = BeautifulSoup(self.driver.page_source)
 
         images = []
-        for img in page.findAll('img'):
-            images.append(img.get('src'))
+        for img_url in page.findAll('img'):
+            images.append(img_url.get('src'))
+            self.bin_manager.insert_image((img_url, page_id, self.endswithWhich(img_url)))
 
         print(images)
 
@@ -251,14 +273,38 @@ class SeleniumSpider(object):
                 return i
         return None
 
-    @staticmethod
-    def download_image(url, page_id, filename, content_type):
-        data = download_helper.download(url)
-        DBHandler.insert_image(page_id, filename, content_type, data)  # TODO pass page_id to store properly
-        return
+    def queryless_url(self, url):
+        if "?" in url:
+            index = url.find("?")
+            return url[:index]
 
-    @staticmethod
-    def download_document(url, page_id, extension):
-        data = download_helper.download(url)
-        DBHandler.insert_page_data(page_id, extension, data)  # TODO pass page_id to store properly
-        return
+        return url
+
+    def download_images(self, image_links):
+        for inp in image_links:
+            filename, ext = self.get_file_name_from_url_and_ext(inp[0])
+            self.download_image(inp[0], inp[1], filename, ext)
+
+    def get_file_name_from_url_and_ext(self, url):
+        return self.merge_text_and_seperate_extension(str(url).split("/")[-1].split("."))
+
+    def merge_text_and_seperate_extension(self, splited):
+        text = ""
+        for i in splited[:-1]:
+            text += str(i)
+        return text, splited[-1]
+
+
+@staticmethod
+def download_image(url, page_id, filename, content_type):
+    data = download_helper.download(url)
+
+    DBHandler.insert_image(page_id, filename, content_type, data)  # TODO pass page_id to store properly
+    return
+
+
+@staticmethod
+def download_document(url, page_id, extension):
+    data = download_helper.download(url)
+    DBHandler.insert_page_data(page_id, extension, data)  # TODO pass page_id to store properly
+    return

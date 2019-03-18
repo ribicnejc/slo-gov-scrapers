@@ -4,8 +4,8 @@ import psycopg2
 
 class DBHandler(object):
     def __init__(self):
-        self.conn = psycopg2.connect(dbname='postgres', port=5433, user='postgres', host='localhost',
-                                     password='postgres1234')
+        self.conn = psycopg2.connect(dbname='postgres', port=5432, user='postgres', host='localhost',
+                                     password='postgres')
 
     def insert_site(self, domain, robots_content, sitemap_content):
         cursor = self.conn.cursor()
@@ -22,6 +22,15 @@ class DBHandler(object):
         cursor = self.conn.cursor()
         SQL = "INSERT INTO crawldb.page (site_id, page_type_code, url, html_content, http_status_code, accessed_time) VALUES (%s, %s, %s, %s, %s, %s);"
         values = (site_id, page_type_code, url, html_content, http_status_code, "now")
+        cursor.execute(SQL, values)
+        self.conn.commit()
+
+    def update_page(self):
+        cursor = self.conn.cursor()
+        SQL = """UPDATE crawldb.page
+                SET id=?, site_id=?, page_type_code=?, url=?, html_content=?, http_status_code=?, accessed_time=?
+                WHERE <condition>;"""
+        values = ()
         cursor.execute(SQL, values)
         self.conn.commit()
 
