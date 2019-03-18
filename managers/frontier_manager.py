@@ -22,6 +22,12 @@ class Frontier(object):
     def add_disallowed_url(self, url):
         self.disallowed_urls.add(url)
 
+    def is_disallowed_url(self, url):
+        for el in self.disallowed_urls:
+            if el in url or url in el:
+                return True
+        return False
+
 
 class ScrapUrl(object):
     def __init__(self, parent, url):

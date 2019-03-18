@@ -66,7 +66,7 @@ class SeleniumSpider(object):
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 5)
 
-    def check_robots(self):
+    def check_robots(self, site_id):
         rp = RobotFileParser()
         rp.set_url(self.url + "robots.txt")
         rp.read()
@@ -87,14 +87,17 @@ class SeleniumSpider(object):
         for sitemap in self.sitemaps:
             r = requests.get(sitemap)
             self.sitemap_content = self.sitemap_content + "," + r.content.decode('utf-8')
-            e = BeautifulSoup(r.content)
+            e = BeautifulSoup(r.content, 'html.parser')
             for elt in e.find_all('loc'):
-                self.insert_page(True, elt.text)
+                self.insert_page(True, elt.text, site_id)
                 frontier_manager.add_url(self.driver.current_url, elt.text)
 
     def scrap_page(self):
         # 1 check robots
-        self.check_robots()  # robots save sitemaps to frontier in db
+
+        site_id = self.db_data.get_site_id(self.get_domain_name(self.url))
+
+        self.check_robots(site_id)  # robots save sitemaps to frontier in db
 
         # 2 save site
         self.save_site(self.driver.current_url)  # here is current saved domain
@@ -107,8 +110,8 @@ class SeleniumSpider(object):
 
         # 4 put urls to frontier
         for url in urls:
-            if url not in frontier_manager.frontier.disallowed_urls:
-                self.insert_page(True, url)
+            if not frontier_manager.frontier.is_disallowed_url(url):
+                self.insert_page(True, url, site_id)
                 frontier_manager.add_url(self.driver.current_url, url)
 
         # 5 make connection to parent url
@@ -130,8 +133,8 @@ class SeleniumSpider(object):
         self.sitemaps = set()
         self.sitemap_content = ""
         time.sleep(settings.TIME_BETWEEN_REQUESTS)
+        self.parent = self.url
         self.url = url.url
-        self.parent = url.parent_url
         self.driver.get(url)
         self.scrap_page()
 
@@ -142,11 +145,14 @@ class SeleniumSpider(object):
         sitemap_content = self.driver.page_source
         self.db_data.insert_site(domain, robots_content, sitemap_content)
 
-    def insert_page(self, frontier, url):
-        site_id = self.db_data.get_site_id(self.get_domain_name(url))
-
+    def insert_page(self, frontier, url, site_id):
         # TODO duplicate???
         page_type_code = ""
+        if frontier:
+            page_type_code = 'FRONTIER'
+            self.db_data.insert_page(site_id, page_type_code, url, None, None)
+            return
+
         r = requests.head(url)
         content_type = r.headers['content-type']
         if 'html' in content_type:
@@ -154,10 +160,6 @@ class SeleniumSpider(object):
 
         if 'application' in content_type:
             page_type_code = 'BINARY'
-
-        if frontier:
-            page_type_code = 'FRONTIER'
-
         if 300 < r.status_code < 310:
             page_type_code = "303"
 
@@ -167,10 +169,13 @@ class SeleniumSpider(object):
             html_content = None
 
         http_status_code = r.status_code
-        # self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code) #  TODO uncomment when ready
+        self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
 
     def save_link(self, url, parent_url):
-        from_page = self.db_data.get_page_id(parent_url)  # get parent id
+        if parent_url:
+            from_page = self.db_data.get_page_id(parent_url)  # get parent id
+        else:  # seed url
+            from_page = self.db_data.get_page_id(url)
         to_page = self.db_data.get_page_id(url)  # get current id
         self.db_data.insert_link(from_page, to_page)
 
@@ -243,12 +248,12 @@ class SeleniumSpider(object):
 
         page_id = self.db_data.get_page_id(current_curl)
 
-        page = BeautifulSoup(self.driver.page_source)
+        page = BeautifulSoup(self.driver.page_source, 'html.parser')
 
         images = []
         for img_url in page.findAll('img'):
             images.append(img_url.get('src'))
-            self.bin_manager.insert_image((img_url, page_id, self.endswithWhich(img_url)))
+            # self.bin_manager.insert_image((img_url, page_id, self.endswithWhich(img_url)))
 
         print(images)
 
