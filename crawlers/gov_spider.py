@@ -104,6 +104,9 @@ class SeleniumSpider(object):
 
         self.bin_manager.reset()  # inserts take place in link searches...
 
+
+        # self.db_data.update_page_content(self.db_data.get_page_id(self.driver.current_url), self.driver.page_source, "200") # to update html content
+
         # 3 fetch all urls
         urls = self.find_links(self.driver.page_source,
                                self.driver.current_url)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
@@ -121,6 +124,9 @@ class SeleniumSpider(object):
         self.find_images(self.driver.page_source, self.driver.current_url)
 
         # 7 fetch binary files (pdf, ppts, docx,...)
+
+        self.download_images(self.bin_manager.get_image_links())
+        self.download_documents(self.bin_manager.get_document_links())
         # shrani images v pb tle
 
         # 8 get next url from frontier and repeat process
@@ -287,7 +293,12 @@ class SeleniumSpider(object):
     def download_images(self, image_links):
         for inp in image_links:
             filename, ext = self.get_file_name_from_url_and_ext(inp[0])
-            self.download_image(inp[0], inp[1], filename, ext)
+            download_image(inp[0], inp[1], filename, ext)
+
+    def download_documents(self, document_links):
+        for inp in document_links:
+            filename, ext = self.get_file_name_from_url_and_ext(inp[0])
+            download_document(inp[0], inp[1], ext)
 
     def get_file_name_from_url_and_ext(self, url):
         return self.merge_text_and_seperate_extension(str(url).split("/")[-1].split("."))

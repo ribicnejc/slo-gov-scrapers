@@ -11,10 +11,10 @@ class Binary_manager:
     def insert_document(self, value):
         self.document_links.append(value)
 
-    def get_image_links(self, value):
+    def get_image_links(self):
         return self.image_links
 
-    def get_document_links(self, value):
+    def get_document_links(self):
         return self.document_links
 
     def reset_images(self):
