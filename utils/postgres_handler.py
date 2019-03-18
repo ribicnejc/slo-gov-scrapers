@@ -20,8 +20,15 @@ class DBHandler(object):
 
     def insert_page(self, site_id, page_type_code, url, html_content, http_status_code):
         cursor = self.conn.cursor()
-        SQL = "INSERT INTO crawldb.page (site_id, page_type_code, url, html_content, http_status_code, accessed_time) VALUES (%s, %s, %s, %s, %s, %s);"
-        values = (site_id, page_type_code, url, html_content, http_status_code, "now")
+        SQL = """INSERT INTO crawldb.page (site_id, page_type_code, url, html_content, http_status_code, accessed_time) 
+        VALUES (%s, %s, %s, %s, %s, %s) 
+        ON CONFLICT (url) DO UPDATE 
+        SET page_type_code = %s,
+            html_content = %s,
+            http_status_code = %s,
+            accessed_time = %s;"""
+        values = (site_id, page_type_code, url, html_content, http_status_code, "now",
+                  page_type_code, html_content, http_status_code, "now")
         cursor.execute(SQL, values)
         self.conn.commit()
 
@@ -67,8 +74,12 @@ class DBHandler(object):
 
     def insert_link(self, from_page, to_page):
         cursor = self.conn.cursor()
-        SQL = "INSERT INTO crawldb.link (from_page, to_page) VALUES (%s, %s);"
-        values = (from_page, to_page)
+        SQL = """INSERT INTO crawldb.link (from_page, to_page) VALUES (%s, %s) 
+        ON CONFLICT (from_page, to_page) DO UPDATE 
+        SET from_page = %s,
+            to_page = %s;
+        """
+        values = (from_page, to_page, from_page, to_page)
         cursor.execute(SQL, values)
         self.conn.commit()
 
