@@ -115,7 +115,7 @@ class SeleniumSpider(object):
         self.save_link(self.url, self.parent)
 
         # 6 fetch images
-        self.find_images(self.driver.page_source)
+        self.find_images(self.driver.page_source, self.driver.current_url)
 
         # 7 fetch binary files (pdf, ppts, docx,...)
         # shrani images v pb tle
@@ -167,7 +167,7 @@ class SeleniumSpider(object):
             html_content = None
 
         http_status_code = r.status_code
-        self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
+        # self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code) #  TODO uncomment when ready
 
     def save_link(self, url, parent_url):
         from_page = self.db_data.get_page_id(parent_url)  # get parent id
@@ -228,6 +228,7 @@ class SeleniumSpider(object):
                         else:
                             if docext in documents_with_data:
                                 # self.download_document(urlfetched, docext)
+                                # ( url, page id, extension)
                                 self.bin_manager.insert_document(
                                     (urlfetched, page_id, docext))  # TODO insert also pageId and other data
                             elif docext in imgexts:
@@ -238,13 +239,16 @@ class SeleniumSpider(object):
 
         return urllist
 
-    def find_images(self, page):
+    def find_images(self, page, current_curl):
+
+        page_id = self.db_data.get_page_id(current_curl)
 
         page = BeautifulSoup(self.driver.page_source)
 
         images = []
-        for img in page.findAll('img'):
-            images.append(img.get('src'))
+        for img_url in page.findAll('img'):
+            images.append(img_url.get('src'))
+            self.bin_manager.insert_image((img_url, page_id, self.endswithWhich(img_url)))
 
         print(images)
 
@@ -268,6 +272,13 @@ class SeleniumSpider(object):
                 return i
         return None
 
+    def queryless_url(self, url):
+        if "?" in url:
+            index = url.find("?")
+            return url[:index]
+
+        return url
+
     def download_images(self, image_links):
         for inp in image_links:
             filename, ext = self.get_file_name_from_url_and_ext(inp[0])
@@ -281,6 +292,7 @@ class SeleniumSpider(object):
         for i in splited[:-1]:
             text += str(i)
         return text, splited[-1]
+
 
 @staticmethod
 def download_image(url, page_id, filename, content_type):
