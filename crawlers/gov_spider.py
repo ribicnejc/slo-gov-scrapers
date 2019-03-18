@@ -6,6 +6,7 @@ import requests
 from urllib.robotparser import RobotFileParser
 from bs4 import BeautifulSoup
 from managers import frontier_manager
+from managers import binary_data_manager
 from managers.frontier_manager import ScrapUrl
 from utils import settings
 from utils import download_helper
@@ -166,9 +167,7 @@ class SeleniumSpider(object):
             html_content = None
 
         http_status_code = r.status_code
-        self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
-
-        self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
+        # self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code) #  TODO uncomment when ready
 
     def save_link(self, url, parent_url):
         from_page = self.db_data.get_page_id(parent_url)  # get parent id
