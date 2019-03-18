@@ -2,7 +2,8 @@ TODOs
 
 # Nejc
 * Duplicate issue
-* Test databse
+* Test database insertions
+* robots.txt no saved as expected
 
 # Miha
 * Insert image/pdfs to database with correct IDs
