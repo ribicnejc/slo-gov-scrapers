@@ -202,9 +202,11 @@ class SeleniumSpider(object):
             else:
                 if docext in documents_with_data:
                     # self.download_document(urlfetched, docext)
-                    self.bin_manager.insert_document((urlfetched, page_id, docext))  # TODO insert also pageId and other data
+                    self.bin_manager.insert_document(
+                        (urlfetched, page_id, docext))  # TODO insert also pageId and other data
                 elif docext in imgexts:
-                    self.bin_manager.insert_image((urlfetched, page_id, docext))  # TODO insert also pageId and other data
+                    self.bin_manager.insert_image(
+                        (urlfetched, page_id, docext))  # TODO insert also pageId and other data
 
         # print frontier_manager.frontier.frontier
 
@@ -229,7 +231,8 @@ class SeleniumSpider(object):
                                 self.bin_manager.insert_document(
                                     (urlfetched, page_id, docext))  # TODO insert also pageId and other data
                             elif docext in imgexts:
-                                self.bin_manager.insert_image((urlfetched, page_id, docext))  # TODO insert also pageId and other data
+                                self.bin_manager.insert_image(
+                                    (urlfetched, page_id, docext))  # TODO insert also pageId and other data
 
                                 # print frontier_manager.frontier.frontier
 
@@ -265,14 +268,30 @@ class SeleniumSpider(object):
                 return i
         return None
 
-    @staticmethod
-    def download_image(url, page_id, filename, content_type):
-        data = download_helper.download(url)
-        DBHandler.insert_image(page_id, filename, content_type, data)  # TODO pass page_id to store properly
-        return
+    def download_images(self, image_links):
+        for inp in image_links:
+            filename, ext = self.get_file_name_from_url_and_ext(inp[0])
+            self.download_image(inp[0], inp[1], filename, ext)
 
-    @staticmethod
-    def download_document(url, page_id, extension):
-        data = download_helper.download(url)
-        DBHandler.insert_page_data(page_id, extension, data)  # TODO pass page_id to store properly
-        return
+    def get_file_name_from_url_and_ext(self, url):
+        return self.merge_text_and_seperate_extension(str(url).split("/")[-1].split("."))
+
+    def merge_text_and_seperate_extension(self, splited):
+        text = ""
+        for i in splited[:-1]:
+            text += str(i)
+        return text, splited[-1]
+
+@staticmethod
+def download_image(url, page_id, filename, content_type):
+    data = download_helper.download(url)
+
+    DBHandler.insert_image(page_id, filename, content_type, data)  # TODO pass page_id to store properly
+    return
+
+
+@staticmethod
+def download_document(url, page_id, extension):
+    data = download_helper.download(url)
+    DBHandler.insert_page_data(page_id, extension, data)  # TODO pass page_id to store properly
+    return
