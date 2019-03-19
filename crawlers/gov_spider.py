@@ -70,7 +70,8 @@ class SeleniumSpider(object):
         rp = RobotFileParser()
         rp.set_url(self.url + "robots.txt")
         rp.read()
-        self.crawl_delay = rp.crawl_delay('*')
+        # self.crawl_delay = rp.crawl_delay('*')
+
         r = requests.get(self.url + "robots.txt")
         if r.status_code == 404:
             return
@@ -129,8 +130,8 @@ class SeleniumSpider(object):
 
         # 7 fetch binary files (pdf, ppts, docx,...)
 
-        self.download_images(self.bin_manager.get_image_links())
-        self.download_documents(self.bin_manager.get_document_links())
+        # self.download_images(self.bin_manager.get_image_links())
+        # self.download_documents(self.bin_manager.get_document_links())
         # shrani images v pb tle
 
         # 8 get next url from frontier and repeat process
