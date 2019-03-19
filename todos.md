@@ -1,9 +1,11 @@
 TODOs
 
 # Nejc
-* Duplicate issue
 * Test database insertions
-* robots.txt no saved as expected
+* SSL issue
+* Sitemap duplications... CHECK?
+* Sitemap content not inserted properly... CHECK?
+* Frontier duplications
 
 # Miha
 * Insert image/pdfs to database with correct IDs
