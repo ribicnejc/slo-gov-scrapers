@@ -136,8 +136,8 @@ class SeleniumSpider(object):
 
         # 7 fetch binary files (pdf, ppts, docx,...)
 
-        # self.download_images(self.bin_manager.get_image_links())
-        # self.download_documents(self.bin_manager.get_document_links())
+        self.download_images(self.bin_manager.get_image_links())
+        self.download_documents(self.bin_manager.get_document_links())
         # shrani images v pb tle
 
         # 8 get next url from frontier and repeat process
@@ -221,7 +221,7 @@ class SeleniumSpider(object):
 
             docext = self.endswithWhich(urlfetched, extensions)
 
-            if (not docext):
+            if docext is None:
                 frontier_manager.add_url(self.parent, urlfetched)
                 urllist.append(urlfetched)
             else:
@@ -247,7 +247,7 @@ class SeleniumSpider(object):
                         urlfetched = urllib.parse.urlparse(i).geturl()
                         # if pictures need to be downloaded, replace extensions instead of documents_with_data
                         docext = self.endswithWhich(urlfetched, extensions)
-                        if not docext:  # if it not has an extension
+                        if docext is None:  # if it not has an extension
                             frontier_manager.add_url(self.parent, urlfetched)  # URLs for frontier...
                             urllist.append(urlfetched)
                         else:
