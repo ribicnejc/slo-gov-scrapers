@@ -108,6 +108,10 @@ class SeleniumSpider(object):
         print("Checking robots")
         self.check_robots(site_id)  # robots save sitemaps to frontier in db
 
+        print("Updating site with sitemap content")
+        self.save_site(self.driver.current_url)  # here is current saved domain
+
+
         # 2 insert current page
         print("Inserting current page")
         self.insert_page(False, self.url, site_id)
@@ -161,8 +165,11 @@ class SeleniumSpider(object):
         domain = self.get_domain_name(url)
         print("Saving site: " + domain)
         robots_content = self.robots_content
-        sitemap_content = self.driver.page_source
-        self.db_data.insert_site(domain, robots_content, sitemap_content)
+        sitemap_content = self.sitemap_content
+        if not self.db_data.get_site_id(domain):
+            self.db_data.insert_site(domain, robots_content, sitemap_content)
+        else:
+            self.db_data.update_site(domain, robots_content, sitemap_content)
 
     def insert_page(self, frontier, url, site_id):
         # TODO duplicate???
