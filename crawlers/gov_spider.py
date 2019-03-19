@@ -228,10 +228,10 @@ class SeleniumSpider(object):
                 if docext in documents_with_data:
                     # self.download_document(urlfetched, docext)
                     self.bin_manager.insert_document(
-                        (urlfetched, page_id, docext))  # TODO insert also pageId and other data
+                        (urlfetched, page_id, docext))
                 elif docext in imgexts:
                     self.bin_manager.insert_image(
-                        (urlfetched, page_id, docext))  # TODO insert also pageId and other data
+                        (urlfetched, page_id, docext))
 
         # print frontier_manager.frontier.frontier
 
