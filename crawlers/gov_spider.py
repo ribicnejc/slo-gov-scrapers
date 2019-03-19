@@ -68,11 +68,11 @@ class SeleniumSpider(object):
 
     def check_robots(self, site_id):
         rp = RobotFileParser()
-        rp.set_url(self.url + "robots.txt")
+        rp.set_url(self.driver.current_url + "robots.txt")
         rp.read()
         # self.crawl_delay = rp.crawl_delay('*')
 
-        r = requests.get(self.url + "robots.txt")
+        r = requests.get(self.driver.current_url + "robots.txt")
         if r.status_code == 404:
             return
         content = r.content.decode('utf-8').split('\n')
@@ -97,34 +97,41 @@ class SeleniumSpider(object):
                 frontier_manager.add_url(self.driver.current_url, elt.text)
 
     def scrap_page(self):
+        print("Scraping page: " + self.driver.current_url)
+
         # 0 saving site
         self.save_site(self.driver.current_url)  # here is current saved domain
 
         site_id = self.db_data.get_site_id(self.get_domain_name(self.url))
 
         # 1 check robots
+        print("Checking robots")
         self.check_robots(site_id)  # robots save sitemaps to frontier in db
 
         # 2 insert current page
+        print("Inserting current page")
         self.insert_page(False, self.url, site_id)
 
+        print("Reseting bin_manager")
         self.bin_manager.reset()  # inserts take place in link searches...
 
-        # self.db_data.update_page_content(self.db_data.get_page_id(self.driver.current_url), self.driver.page_source, "200") # to update html content
-
         # 3 fetch all urls
+        print("Searching for urls...")
         urls = self.find_links(self.driver.page_source,
                                self.driver.current_url)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
+        print("Number of urls found: " + len(urls).__str__())
 
         # 4 put urls to frontier
+        print("Putting urls to frontier")
         for url in urls:
             if not frontier_manager.frontier.is_disallowed_url(url):
                 self.insert_page(True, url, site_id)
-                # 5 make connection to parent url
                 self.save_link(url=url, parent_url=self.url)
+                # print("Inserting page, making link with: " + self.url + " -> " + url)
                 frontier_manager.add_url(self.driver.current_url, url)
 
         # 6 fetch images
+        print("Searching for images...")
         self.find_images(self.driver.page_source, self.driver.current_url)
 
         # 7 fetch binary files (pdf, ppts, docx,...)
@@ -134,6 +141,7 @@ class SeleniumSpider(object):
         # shrani images v pb tle
 
         # 8 get next url from frontier and repeat process
+        print("Changing url...")
         if frontier_manager.is_not_empty():
             self.change_url(frontier_manager.get_next())
         else:
@@ -142,6 +150,7 @@ class SeleniumSpider(object):
     def change_url(self, url):
         self.sitemaps = set()
         self.sitemap_content = ""
+        print("##########################################################")
         time.sleep(settings.TIME_BETWEEN_REQUESTS)
         # self.parent = self.url
         self.url = url.url
@@ -205,8 +214,6 @@ class SeleniumSpider(object):
 
         page_body = BeautifulSoup(page_bd)
 
-        print(page_body.findAll('script'))
-
         for link in page_body.findAll('', attrs={'href': re.compile("^https?://")}):
 
             # print urlparse.urlparse(link.get('href'))
@@ -217,7 +224,6 @@ class SeleniumSpider(object):
             if (not docext):
                 frontier_manager.add_url(self.parent, urlfetched)
                 urllist.append(urlfetched)
-                print(urlfetched)
             else:
                 if docext in documents_with_data:
                     # self.download_document(urlfetched, docext)
@@ -269,8 +275,6 @@ class SeleniumSpider(object):
             images.append(img_url.get('src'))
             # self.bin_manager.insert_image((img_url, page_id, self.endswithWhich(img_url)))
 
-        print(images)
-
     def endswithany(self, s, exts):
         if "?" in s:
             index = s.find("?")
@@ -320,7 +324,8 @@ class SeleniumSpider(object):
     def download_image(self, url, page_id, filename, content_type):
         data = download_helper.download(url)
 
-        self.db_data.insert_image(page_id, filename, str(content_type).upper(), data)  # TODO pass page_id to store properly
+        self.db_data.insert_image(page_id, filename, str(content_type).upper(),
+                                  data)  # TODO pass page_id to store properly
         return
 
     def download_document(self, url, page_id, extension):
