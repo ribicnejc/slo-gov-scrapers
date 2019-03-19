@@ -17,7 +17,7 @@ class Frontier(object):
         if url.url not in self.already_added:
             if url.url not in self.disallowed_urls:
                 self.frontier.put(url)
-                self.already_added.add(url)
+                self.already_added.add(url.url)
 
     def add_disallowed_url(self, url):
         self.disallowed_urls.add(url)
@@ -56,10 +56,10 @@ def add_disallowed_url(url):
 
 
 def plant_seeds():
-    frontier.add_url(ScrapUrl("", "http://evem.gov.si/"))
-    frontier.add_url(ScrapUrl("", "https://e-uprava.gov.si/"))
-    frontier.add_url(ScrapUrl("", "https://podatki.gov.si/"))
-    frontier.add_url(ScrapUrl("", "http://www.e-prostor.gov.si/"))
+    add_url("", "http://evem.gov.si/")
+    add_url("", "https://e-uprava.gov.si/")
+    add_url("", "https://podatki.gov.si/")
+    add_url("", "http://www.e-prostor.gov.si/")
 
     # frontier.add_url(ScrapUrl("", "http://www.sova.gov.si/"))
     # frontier.add_url(ScrapUrl("", "http://www.sova.gov.si/si/delovno_podrocje/"))
