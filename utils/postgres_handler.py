@@ -4,8 +4,9 @@ import psycopg2
 
 class DBHandler(object):
     def __init__(self):
-        self.conn = psycopg2.connect(dbname='postgres', port=5432, user='postgres', host='localhost', # port 5433 - miha, port 5432 - nejc
-                                     password='postgres') # postgres1234 - miha, postgres - nejc
+        self.conn = psycopg2.connect(dbname='postgres', port=5432, user='postgres', host='localhost',
+                                     # port 5433 - miha, port 5432 - nejc
+                                     password='postgres')  # postgres1234 - miha, postgres - nejc
 
     def insert_site(self, domain, robots_content, sitemap_content):
         cursor = self.conn.cursor()
@@ -36,21 +37,20 @@ class DBHandler(object):
 
         cursor = self.conn.cursor()
         SQL = """UPDATE crawldb.site
-                SET robots_content=?, sitemap_content=?
-                WHERE domain=?;"""
-        values = (domain, robots_content, sitemap_content)
+                SET robots_content=%s, sitemap_content=%s
+                WHERE domain=%s;"""
+        values = (robots_content, sitemap_content, domain)
         cursor.execute(SQL, values)
         self.conn.commit()
 
-
     def update_page_content(self, page_id, html_content, status_code):
-            cursor = self.conn.cursor()
-            SQL = """UPDATE crawldb.page
+        cursor = self.conn.cursor()
+        SQL = """UPDATE crawldb.page
                     SET html_content=%s, http_status_code=%s, accessed_time=%s
                     WHERE id=%s;"""
-            values = (html_content, status_code, "now", page_id)
-            cursor.execute(SQL, values)
-            self.conn.commit()
+        values = (html_content, status_code, "now", page_id)
+        cursor.execute(SQL, values)
+        self.conn.commit()
 
     def update_page(self):
         cursor = self.conn.cursor()

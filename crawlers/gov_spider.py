@@ -70,7 +70,7 @@ class SeleniumSpider(object):
         rp = RobotFileParser()
         rp.set_url(self.driver.current_url + "robots.txt")
         rp.read()
-        # self.crawl_delay = rp.crawl_delay('*')
+        self.crawl_delay = rp.crawl_delay('*')
 
         r = requests.get(self.driver.current_url + "robots.txt")
         if r.status_code == 404:
