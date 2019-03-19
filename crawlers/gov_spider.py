@@ -212,7 +212,7 @@ class SeleniumSpider(object):
 
         page_id = self.db_data.get_page_id(current_curl)
 
-        page_body = BeautifulSoup(page_bd)
+        page_body = BeautifulSoup(page_bd, 'html.parser')
 
         for link in page_body.findAll('', attrs={'href': re.compile("^https?://")}):
 
