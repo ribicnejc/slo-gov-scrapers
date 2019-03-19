@@ -110,7 +110,6 @@ class SeleniumSpider(object):
 
         self.bin_manager.reset()  # inserts take place in link searches...
 
-
         # self.db_data.update_page_content(self.db_data.get_page_id(self.driver.current_url), self.driver.page_source, "200") # to update html content
 
         # 3 fetch all urls
@@ -302,12 +301,12 @@ class SeleniumSpider(object):
     def download_images(self, image_links):
         for inp in image_links:
             filename, ext = self.get_file_name_from_url_and_ext(inp[0])
-            download_image(inp[0], inp[1], filename, ext)
+            self.download_image(inp[0], inp[1], filename, ext)
 
     def download_documents(self, document_links):
         for inp in document_links:
             filename, ext = self.get_file_name_from_url_and_ext(inp[0])
-            download_document(inp[0], inp[1], ext)
+            self.download_document(inp[0], inp[1], ext)
 
     def get_file_name_from_url_and_ext(self, url):
         return self.merge_text_and_seperate_extension(str(url).split("/")[-1].split("."))
@@ -318,17 +317,13 @@ class SeleniumSpider(object):
             text += str(i)
         return text, splited[-1]
 
+    def download_image(self, url, page_id, filename, content_type):
+        data = download_helper.download(url)
 
-@staticmethod
-def download_image(url, page_id, filename, content_type):
-    data = download_helper.download(url)
+        self.db_data.insert_image(page_id, filename, str(content_type).upper(), data)  # TODO pass page_id to store properly
+        return
 
-    DBHandler.insert_image(page_id, filename, content_type, data)  # TODO pass page_id to store properly
-    return
-
-
-@staticmethod
-def download_document(url, page_id, extension):
-    data = download_helper.download(url)
-    DBHandler.insert_page_data(page_id, extension, data)  # TODO pass page_id to store properly
-    return
+    def download_document(self, url, page_id, extension):
+        data = download_helper.download(url)
+        self.db_data.insert_page_data(page_id, str(extension).upper(), data)  # TODO pass page_id to store properly
+        return
