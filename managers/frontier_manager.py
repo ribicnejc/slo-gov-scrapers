@@ -56,12 +56,14 @@ def add_disallowed_url(url):
 
 
 def plant_seeds():
+    frontier.add_url(ScrapUrl("", "http://evem.gov.si/"))
     frontier.add_url(ScrapUrl("", "https://e-uprava.gov.si/"))
-    frontier.add_url(ScrapUrl("", "http://www.e-prostor.gov.si/"))
-    frontier.add_url(ScrapUrl("", "http://www.sova.gov.si/"))
-    frontier.add_url(ScrapUrl("", "http://www.sova.gov.si/si/delovno_podrocje/"))
-    frontier.add_url(ScrapUrl("", "http://www.arso.gov.si/"))
     frontier.add_url(ScrapUrl("", "https://podatki.gov.si/"))
-    frontier.add_url(ScrapUrl("", "http://www.upravneenote.gov.si/"))
-    frontier.add_url(ScrapUrl("", "http://prostor3.gov.si/javni/login.jsp?jezik=sl"))
-    frontier.add_url(ScrapUrl("", "http://www.mju.gov.si/"))
+    frontier.add_url(ScrapUrl("", "http://www.e-prostor.gov.si/"))
+
+    # frontier.add_url(ScrapUrl("", "http://www.sova.gov.si/"))
+    # frontier.add_url(ScrapUrl("", "http://www.sova.gov.si/si/delovno_podrocje/"))
+    # frontier.add_url(ScrapUrl("", "http://www.arso.gov.si/"))
+    # frontier.add_url(ScrapUrl("", "http://www.upravneenote.gov.si/"))
+    # frontier.add_url(ScrapUrl("", "http://prostor3.gov.si/javni/login.jsp?jezik=sl"))
+    # frontier.add_url(ScrapUrl("", "http://www.mju.gov.si/"))
