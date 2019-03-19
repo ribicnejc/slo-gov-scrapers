@@ -43,6 +43,7 @@ class DBHandler(object):
         cursor.execute(SQL, values)
         self.conn.commit()
 
+
     def update_page_content(self, page_id, html_content, status_code):
         cursor = self.conn.cursor()
         SQL = """UPDATE crawldb.page
