@@ -100,7 +100,7 @@ class DBHandler(object):
         values = (url_domain_name,)
         cursor.execute(SQL, values)
         s = cursor.fetchone()
-        if s != None:
+        if s is not None:
             return s[0]
         else:
             return None
@@ -113,7 +113,7 @@ class DBHandler(object):
         values = (url,)
         cursor.execute(SQL, values)
         s = cursor.fetchone()
-        if s != None:
+        if s is not None:
             return s[0]
         else:
             return None
