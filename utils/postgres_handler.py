@@ -103,4 +103,8 @@ class DBHandler(object):
                  WHERE url=%s;"""
         values = (url,)
         cursor.execute(SQL, values)
-        return cursor.fetchone()[0]
+        s = cursor.fetchone()
+        if s != None:
+            return s[0]
+        else:
+            return None

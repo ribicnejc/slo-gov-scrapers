@@ -72,6 +72,8 @@ class SeleniumSpider(object):
         rp.read()
         self.crawl_delay = rp.crawl_delay('*')
         r = requests.get(self.url + "robots.txt")
+        if r.status_code == 404:
+            return
         content = r.content.decode('utf-8').split('\n')
         self.robots_content = content
         for el in content:
@@ -90,17 +92,20 @@ class SeleniumSpider(object):
             e = BeautifulSoup(r.content, 'html.parser')
             for elt in e.find_all('loc'):
                 self.insert_page(True, elt.text, site_id)
+                self.save_link(url=elt.text, parent_url=self.url)  # creating reference as core to sitemaps
                 frontier_manager.add_url(self.driver.current_url, elt.text)
 
     def scrap_page(self):
-        # 1 check robots
+        # 0 saving site
+        self.save_site(self.driver.current_url)  # here is current saved domain
 
         site_id = self.db_data.get_site_id(self.get_domain_name(self.url))
 
+        # 1 check robots
         self.check_robots(site_id)  # robots save sitemaps to frontier in db
 
-        # 2 save site
-        self.save_site(self.driver.current_url)  # here is current saved domain
+        # 2 insert current page
+        self.insert_page(False, self.url, site_id)
 
         self.bin_manager.reset()  # inserts take place in link searches...
 
@@ -112,10 +117,9 @@ class SeleniumSpider(object):
         for url in urls:
             if not frontier_manager.frontier.is_disallowed_url(url):
                 self.insert_page(True, url, site_id)
+                # 5 make connection to parent url
+                self.save_link(url=url, parent_url=self.url)
                 frontier_manager.add_url(self.driver.current_url, url)
-
-        # 5 make connection to parent url
-        self.save_link(self.url, self.parent)
 
         # 6 fetch images
         self.find_images(self.driver.page_source, self.driver.current_url)
@@ -133,9 +137,9 @@ class SeleniumSpider(object):
         self.sitemaps = set()
         self.sitemap_content = ""
         time.sleep(settings.TIME_BETWEEN_REQUESTS)
-        self.parent = self.url
+        # self.parent = self.url
         self.url = url.url
-        self.driver.get(url)
+        self.driver.get(self.url)
         self.scrap_page()
 
     def save_site(self, url):
@@ -150,6 +154,7 @@ class SeleniumSpider(object):
         page_type_code = ""
         if frontier:
             page_type_code = 'FRONTIER'
+            # TODO here also insert link...
             self.db_data.insert_page(site_id, page_type_code, url, None, None)
             return
 
@@ -160,8 +165,6 @@ class SeleniumSpider(object):
 
         if 'application' in content_type:
             page_type_code = 'BINARY'
-        if 300 < r.status_code < 310:
-            page_type_code = "303"
 
         url = r.url
         html_content = self.driver.page_source
@@ -177,6 +180,11 @@ class SeleniumSpider(object):
         else:  # seed url
             from_page = self.db_data.get_page_id(url)
         to_page = self.db_data.get_page_id(url)  # get current id
+        if not to_page:
+            a = 4
+
+            # TODO save link should be called when inserting to frontier....
+            # because url = sova, and parent url is arso.. just because queue and not real parenting
         self.db_data.insert_link(from_page, to_page)
 
     @staticmethod
