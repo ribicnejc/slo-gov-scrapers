@@ -54,6 +54,9 @@ class SeleniumSpider(object):
         self.bin_manager = binary_data_manager.Binary_manager()
 
         chrome_options = Options()
+
+        chrome_options.add_argument('--ignore-certificate-errors')
+
         if settings.HEADLESS_BROWSER:
             chrome_options.add_argument("--headless")
         chrome_options.add_argument("User-Agent=*")
@@ -63,7 +66,6 @@ class SeleniumSpider(object):
             service_args=service_args)
         driver.get(self.url)
         driver.implicitly_wait(2)
-        chrome_options.add_argument('--ignore-certificate-errors')
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 5)
 
@@ -181,7 +183,7 @@ class SeleniumSpider(object):
             self.db_data.insert_page(site_id, page_type_code, url, None, None)
             return
 
-        r = requests.head(url)
+        r = requests.head(url, verify=False)
         content_type = r.headers['content-type']
         if 'html' in content_type:
             page_type_code = 'HTML'
