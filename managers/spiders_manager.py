@@ -5,8 +5,8 @@ from threading import Thread
 
 
 def spider_thread(frontier):
-    spider = SeleniumSpider(frontier.get_next())
-    spider.scrap_page()
+    spider = SeleniumSpider()
+    spider.change_url(frontier.get_next())
 
 
 def release_spiders():

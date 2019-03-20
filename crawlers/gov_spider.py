@@ -4,6 +4,8 @@ import urllib
 import requests
 
 from urllib.robotparser import RobotFileParser
+
+import selenium
 from bs4 import BeautifulSoup
 from managers import frontier_manager
 from managers import binary_data_manager
@@ -15,6 +17,8 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
+
+from  time import sleep
 
 miscexts = (".js", ".css")
 documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.", ".doc", ".docx", ".pdf", ".ppt", ".pptx.")
@@ -39,15 +43,14 @@ def stale_decorator(f):
 
 
 class SeleniumSpider(object):
-    def __init__(self, url):
-        self.url = url.url
+    def __init__(self):
         self.sitemaps = set()
         self.disallowed_urls = set()
         self.crawl_delay = 1
 
         self.robots_content = ""
-        self.parent = url.parent
         self.sitemap_content = ""
+        self.parent = ""
 
         self.db_data = DBHandler()
 
@@ -61,8 +64,8 @@ class SeleniumSpider(object):
         driver = webdriver.Chrome(
             chrome_options=chrome_options,
             service_args=service_args)
-        driver.get(self.url)
-        driver.implicitly_wait(2)
+        driver.set_page_load_timeout(10)
+        driver.implicitly_wait(10)
         chrome_options.add_argument('--ignore-certificate-errors')
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 5)
@@ -71,7 +74,7 @@ class SeleniumSpider(object):
         rp = RobotFileParser()
         rp.set_url(self.driver.current_url + "robots.txt")
         rp.read()
-        #self.crawl_delay = rp.crawl_delay('*')
+        # self.crawl_delay = rp.crawl_delay('*')
 
         r = requests.get(self.driver.current_url + "robots.txt")
         if r.status_code == 404:
@@ -111,7 +114,6 @@ class SeleniumSpider(object):
 
         print("Updating site with sitemap content")
         self.save_site(self.driver.current_url)  # here is current saved domain
-
 
         # 2 insert current page
         print("Inserting current page")
@@ -156,10 +158,22 @@ class SeleniumSpider(object):
         self.sitemaps = set()
         self.sitemap_content = ""
         print("##########################################################")
+        print("New url: " + url.url)
         time.sleep(settings.TIME_BETWEEN_REQUESTS)
         # self.parent = self.url
         self.url = url.url
-        self.driver.get(self.url)
+
+        try:
+            self.driver.get(self.url)
+        except selenium.common.exceptions.TimeoutException:
+            print("Timeout!!")
+            sleep(5)            #TODO check why it timeouts
+            print("Changing url...")
+            if frontier_manager.is_not_empty():
+                self.change_url(frontier_manager.get_next())
+            else:
+                self.driver.close()
+
         self.scrap_page()
 
     def save_site(self, url):
@@ -330,13 +344,22 @@ class SeleniumSpider(object):
         return text, splited[-1]
 
     def download_image(self, url, page_id, filename, content_type):
-        data = download_helper.download(url)
+        try:
+            data = download_helper.download(url)
+        except Exception as e:
+            print("Can't download image (" + str(e) + ")")
+            return
 
         self.db_data.insert_image(page_id, filename, str(content_type).upper(),
                                   data)  # TODO pass page_id to store properly
         return
 
     def download_document(self, url, page_id, extension):
-        data = download_helper.download(url)
+        try:
+            data = download_helper.download(url)
+        except Exception as e:
+            print("Can't download document (" + str(e) + ")")
+            return
+
         self.db_data.insert_page_data(page_id, str(extension).upper(), data)  # TODO pass page_id to store properly
         return
