@@ -57,6 +57,9 @@ class SeleniumSpider(object):
         self.bin_manager = binary_data_manager.Binary_manager()
 
         chrome_options = Options()
+
+        chrome_options.add_argument('--ignore-certificate-errors')
+
         if settings.HEADLESS_BROWSER:
             chrome_options.add_argument("--headless")
         chrome_options.add_argument("User-Agent=*")
@@ -162,18 +165,16 @@ class SeleniumSpider(object):
         time.sleep(settings.TIME_BETWEEN_REQUESTS)
         # self.parent = self.url
         self.url = url.url
-
         try:
             self.driver.get(self.url)
         except selenium.common.exceptions.TimeoutException:
             print("Timeout!!")
-            sleep(5)            #TODO check why it timeouts
+            sleep(5)  # TODO check why it timeouts
             print("Changing url...")
             if frontier_manager.is_not_empty():
                 self.change_url(frontier_manager.get_next())
             else:
                 self.driver.close()
-
         self.scrap_page()
 
     def save_site(self, url):
@@ -195,7 +196,7 @@ class SeleniumSpider(object):
             self.db_data.insert_page(site_id, page_type_code, url, None, None)
             return
 
-        r = requests.head(url)
+        r = requests.head(url, verify=False)
         content_type = r.headers['content-type']
         if 'html' in content_type:
             page_type_code = 'HTML'
