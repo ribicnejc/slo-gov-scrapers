@@ -14,10 +14,11 @@ class Frontier(object):
         return self.frontier.empty()
 
     def add_url(self, url):
-        if url.url not in self.already_added:
-            if url.url not in self.disallowed_urls:
-                self.frontier.put(url)
-                self.already_added.add(url.url)
+        if ".gov.si" in url.url:
+            if url.url not in self.already_added:
+                if url.url not in self.disallowed_urls:
+                    self.frontier.put(url)
+                    self.already_added.add(url.url)
 
     def add_disallowed_url(self, url):
         self.disallowed_urls.add(url)
