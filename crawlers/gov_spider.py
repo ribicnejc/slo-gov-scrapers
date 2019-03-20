@@ -63,6 +63,7 @@ class SeleniumSpider(object):
             service_args=service_args)
         driver.get(self.url)
         driver.implicitly_wait(2)
+        chrome_options.add_argument('--ignore-certificate-errors')
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 5)
 
