@@ -3,6 +3,8 @@ import re
 import urllib
 import requests
 
+# from urllib.robotparser import RobotFileParser
+from managers.robotparser import RobotFileParser
 from urllib.robotparser import RobotFileParser
 
 import selenium
