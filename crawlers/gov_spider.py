@@ -6,6 +6,7 @@ import requests
 # from urllib.robotparser import RobotFileParser
 from managers.robotparser import RobotFileParser
 from urllib.robotparser import RobotFileParser
+from collections import defaultdict
 
 import selenium
 from bs4 import BeautifulSoup
@@ -20,7 +21,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
 
-from  time import sleep
+from time import sleep
 
 miscexts = (".js", ".css")
 documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.", ".doc", ".docx", ".pdf", ".ppt", ".pptx.")
@@ -53,6 +54,9 @@ class SeleniumSpider(object):
         self.robots_content = ""
         self.sitemap_content = ""
         self.parent = ""
+
+        self.NUMBER_OF_RETRIES = 3
+        self.retriesMap = defaultdict(int)  # saves timeout-ed pages to frontier again for NUMBER_OF_RETRIES tries
 
         self.db_data = DBHandler()
 
@@ -171,9 +175,16 @@ class SeleniumSpider(object):
             self.driver.get(self.url)
         except selenium.common.exceptions.TimeoutException:
             print("Timeout!!")
+
+            if self.retriesMap[self.url] == 0:
+                self.retriesMap = defaultdict(int)  # cleansing dict, we don't need past urls in our dict
+            self.retriesMap[self.url] += 1
             sleep(5)  # TODO check why it timeouts
             print("Changing url...")
-            if frontier_manager.is_not_empty():
+            if self.retriesMap[self.url] < self.NUMBER_OF_RETRIES:
+                print("Retrying " + self.url + "... " + str(self.retriesMap[self.url]) + ". time")
+                self.change_url(url)
+            elif frontier_manager.is_not_empty():
                 self.change_url(frontier_manager.get_next())
             else:
                 self.driver.close()
