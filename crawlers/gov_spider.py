@@ -20,6 +20,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
+from utils.url_helper import get_domain_name
 
 from time import sleep
 
@@ -115,7 +116,7 @@ class SeleniumSpider(object):
         # 0 saving site
         self.save_site(self.driver.current_url)  # here is current saved domain
 
-        site_id = self.db_data.get_site_id(self.get_domain_name(self.url))
+        site_id = self.db_data.get_site_id(get_domain_name(self.url))
 
         # 1 check robots
         print("Checking robots")
@@ -191,7 +192,7 @@ class SeleniumSpider(object):
         self.scrap_page()
 
     def save_site(self, url):
-        domain = self.get_domain_name(url)
+        domain = get_domain_name(url)
         print("Saving site: " + domain)
         robots_content = self.robots_content
         sitemap_content = self.sitemap_content
@@ -238,12 +239,7 @@ class SeleniumSpider(object):
             # because url = sova, and parent url is arso.. just because queue and not real parenting
         self.db_data.insert_link(from_page, to_page)
 
-    @staticmethod
-    def get_domain_name(url):
-        return url.split('//')[-1].split('/')[0]
-
     def find_links(self, page_bd, current_curl):  # vrni vse frontier urlje, pa shrani image v bazo...
-
         urllist = []
 
         page_id = self.db_data.get_page_id(current_curl)

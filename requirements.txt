@@ -6,3 +6,4 @@ psycopg2
 postgres
 beautifulsoup4
 requests
+w3lib
