@@ -8,7 +8,7 @@ class Frontier(object):
         self.frontier = Queue()
         self.already_added = set()
         self.disallowed_urls = set()
-        self.domain_wait_times = dict()  # when we get an url we also get the sleep time for the domain
+        self.domain_wait_times = dict()  # crawlers check last access time and sleep accordingly
 
     def get_next(self):
         return self.frontier.get()
@@ -30,6 +30,15 @@ class Frontier(object):
             if el in url or url in el:
                 return True
         return False
+
+    def put_domain_access_time(self, domain, time):
+        self.domain_wait_times[domain] = time
+
+    def get_domain_access_time(self, domain):
+        try:
+            return self.domain_wait_times[domain]
+        except KeyError:
+            return None
 
 
 class ScrapUrl(object):
@@ -56,6 +65,14 @@ def add_url(parent_url, url):
 
 def add_disallowed_url(url):
     frontier.add_disallowed_url(url)
+
+
+def put_domain_access_time(domain, time):
+    frontier.put_domain_access_time(domain, time)
+
+
+def get_domain_access_time(domain):
+    return frontier.get_domain_access_time(domain)
 
 
 def plant_seeds():

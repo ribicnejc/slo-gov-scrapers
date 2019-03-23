@@ -6,7 +6,7 @@ from threading import Thread
 
 def spider_thread(frontier):
     spider = SeleniumSpider()
-    spider.change_url(frontier.get_next())
+    spider.crawl()
 
 
 def release_spiders():
