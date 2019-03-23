@@ -3,7 +3,10 @@ import re
 import urllib
 import requests
 
+# from urllib.robotparser import RobotFileParser
+from managers.robotparser import RobotFileParser
 from urllib.robotparser import RobotFileParser
+from collections import defaultdict
 
 import selenium
 from bs4 import BeautifulSoup
@@ -17,8 +20,9 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
+from utils.url_helper import get_domain_name
 
-from  time import sleep
+from time import sleep
 
 miscexts = (".js", ".css")
 documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.", ".doc", ".docx", ".pdf", ".ppt", ".pptx.")
@@ -46,32 +50,45 @@ class SeleniumSpider(object):
     def __init__(self):
         self.sitemaps = set()
         self.disallowed_urls = set()
-        self.crawl_delay = 1
 
         self.robots_content = ""
         self.sitemap_content = ""
         self.parent = ""
+        self.current_domain = ""
+        self.url = ""
+
+        self.NUMBER_OF_RETRIES = 3
+        self.retriesMap = defaultdict(int)  # saves timeout-ed pages to frontier again for NUMBER_OF_RETRIES tries
 
         self.db_data = DBHandler()
 
         self.bin_manager = binary_data_manager.Binary_manager()
 
         chrome_options = Options()
-
         chrome_options.add_argument('--ignore-certificate-errors')
-
         if settings.HEADLESS_BROWSER:
             chrome_options.add_argument("--headless")
         chrome_options.add_argument("User-Agent=*")
+
         service_args = ['--verbose']
-        driver = webdriver.Chrome(
-            chrome_options=chrome_options,
-            service_args=service_args)
+        driver = webdriver.Firefox()
+        #    firefox_options=chrome_options,
+         #   service_args=service_args
+        #)
+
         driver.set_page_load_timeout(10)
         driver.implicitly_wait(10)
-        chrome_options.add_argument('--ignore-certificate-errors')
+
         self.driver = driver
         self.wait = WebDriverWait(self.driver, 5)
+
+    def crawl(self):
+        while frontier_manager.is_not_empty():
+            print("Changing url...")
+            if not self.change_url(frontier_manager.get_next()):
+                continue
+            self.scrap_page()
+        self.driver.close()
 
     def check_robots(self, site_id):
         rp = RobotFileParser()
@@ -109,7 +126,7 @@ class SeleniumSpider(object):
         # 0 saving site
         self.save_site(self.driver.current_url)  # here is current saved domain
 
-        site_id = self.db_data.get_site_id(self.get_domain_name(self.url))
+        site_id = self.db_data.get_site_id(get_domain_name(self.url))
 
         # 1 check robots
         print("Checking robots")
@@ -148,37 +165,47 @@ class SeleniumSpider(object):
 
         self.download_images(self.bin_manager.get_image_links())
         self.download_documents(self.bin_manager.get_document_links())
-        # shrani images v pb tle
-
-        # 8 get next url from frontier and repeat process
-        print("Changing url...")
-        if frontier_manager.is_not_empty():
-            self.change_url(frontier_manager.get_next())
-        else:
-            self.driver.close()
+        # TODO shrani images v pb tle
 
     def change_url(self, url):
         self.sitemaps = set()
         self.sitemap_content = ""
         print("##########################################################")
         print("New url: " + url.url)
-        time.sleep(settings.TIME_BETWEEN_REQUESTS)
+        self.current_domain = get_domain_name(url.url)
+        print("Domain " + self.current_domain)
+
+        # sleep here
+        domain_last_accessed = frontier_manager.get_domain_access_time(self.current_domain)
+        delta_time = 0
+        if domain_last_accessed is not None:
+            delta_time = time.time() - domain_last_accessed
+        while domain_last_accessed is not None and (delta_time < settings.TIME_BETWEEN_REQUESTS):
+            print("Sleeping for " + str(settings.TIME_BETWEEN_REQUESTS - delta_time) + "seconds on url " + url.url)
+            sleep(settings.TIME_BETWEEN_REQUESTS - delta_time)
+            delta_time = time.time() - domain_last_accessed
+
         # self.parent = self.url
         self.url = url.url
         try:
+            frontier_manager.put_domain_access_time(self.current_domain, time.time())
             self.driver.get(self.url)
+            return True
         except selenium.common.exceptions.TimeoutException:
             print("Timeout!!")
-            sleep(5)  # TODO check why it timeouts
+            if self.retriesMap[self.url] == 0:
+                self.retriesMap = defaultdict(int)  # cleansing dict, we don't need past urls in our dict
+            self.retriesMap[self.url] += 1
+            sleep(settings.TIME_BETWEEN_REQUESTS)  # TODO check why it timeouts
             print("Changing url...")
-            if frontier_manager.is_not_empty():
-                self.change_url(frontier_manager.get_next())
+            if self.retriesMap[self.url] < self.NUMBER_OF_RETRIES:
+                print("Retrying " + self.url + "... " + str(self.retriesMap[self.url]) + ". time")
+                self.change_url(url)
             else:
-                self.driver.close()
-        self.scrap_page()
+                return False
 
     def save_site(self, url):
-        domain = self.get_domain_name(url)
+        domain = get_domain_name(url)
         print("Saving site: " + domain)
         robots_content = self.robots_content
         sitemap_content = self.sitemap_content
@@ -225,12 +252,7 @@ class SeleniumSpider(object):
             # because url = sova, and parent url is arso.. just because queue and not real parenting
         self.db_data.insert_link(from_page, to_page)
 
-    @staticmethod
-    def get_domain_name(url):
-        return url.split('//')[-1].split('/')[0]
-
     def find_links(self, page_bd, current_curl):  # vrni vse frontier urlje, pa shrani image v bazo...
-
         urllist = []
 
         page_id = self.db_data.get_page_id(current_curl)
