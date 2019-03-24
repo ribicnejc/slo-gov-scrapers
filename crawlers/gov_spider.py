@@ -17,15 +17,15 @@ from utils import settings
 from utils import download_helper
 from utils.postgres_handler import DBHandler
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import WebDriverException, StaleElementReferenceException
 from utils.url_helper import get_domain_name
 
 from time import sleep
 
-miscexts = (".js", ".css")
-documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX.", ".doc", ".docx", ".pdf", ".ppt", ".pptx.")
+miscexts = (".js", ".css", ".zip", ".rar")
+documents_with_data = (".DOC", ".DOCX", ".PDF", ".PPT", ".PPTX", ".doc", ".docx", ".pdf", ".ppt", ".pptx")
 imgexts = (".JPG", ".PNG", ".TIFF", ".GIF", ".jpg", ".png", ".tiff", ".gif")  # TODO fill
 extensions = documents_with_data + imgexts + miscexts
 
@@ -71,11 +71,22 @@ class SeleniumSpider(object):
         chrome_options.add_argument("User-Agent=*")
 
         service_args = ['--verbose']
-        driver = webdriver.Firefox()
-        #    firefox_options=chrome_options,
-         #   service_args=service_args
-        #)
 
+        # firefox settings
+        options = Options()
+        options.headless = True
+
+        profile = webdriver.FirefoxProfile()
+        profile.accept_untrusted_certs = True
+
+        capabilities = webdriver.DesiredCapabilities().FIREFOX
+        capabilities['acceptSslCerts'] = False
+
+
+        driver = webdriver.Firefox(firefox_profile=profile, options=options, capabilities=capabilities)
+        #    firefox_options=chrome_options,
+        #   service_args=service_args
+        # )
         driver.set_page_load_timeout(10)
         driver.implicitly_wait(10)
 
