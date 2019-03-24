@@ -2,6 +2,7 @@ import time
 import re
 import urllib
 import requests
+import threading
 
 # from urllib.robotparser import RobotFileParser
 from managers.robotparser import RobotFileParser
@@ -181,7 +182,7 @@ class SeleniumSpider(object):
     def change_url(self, url):
         self.sitemaps = set()
         self.sitemap_content = ""
-        print("##########################################################")
+        print("##########################################################: " + str(threading.get_ident()))
         print("New url: " + url.url)
         self.current_domain = get_domain_name(url.url)
         print("Domain " + self.current_domain)
