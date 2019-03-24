@@ -105,7 +105,7 @@ class SeleniumSpider(object):
     def check_robots(self, site_id):
         rp = RobotFileParser()
         rp.set_url(self.driver.current_url + "robots.txt")
-        rp.read()
+        rp.read() # une mora ngavt vsaj 15 minut na 6 threadih
         # self.crawl_delay = rp.crawl_delay('*')
 
         r = requests.get(self.driver.current_url + "robots.txt")
