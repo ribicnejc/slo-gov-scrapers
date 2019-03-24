@@ -237,6 +237,8 @@ class SeleniumSpider(object):
             html_content = None
 
         http_status_code = r.status_code
+        if '' == page_type_code:
+            return
         self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
 
     def save_link(self, url, parent_url):
@@ -285,7 +287,7 @@ class SeleniumSpider(object):
             for line in str(script).split("\n"):
                 # parsin urls from line
                 urls_parsed_from_line = re.findall(
-                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line);
+                    'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line)
 
                 if (len(urls_parsed_from_line) > 0):
                     for i in urls_parsed_from_line:
