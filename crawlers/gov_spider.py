@@ -92,7 +92,7 @@ class SeleniumSpider(object):
         driver.implicitly_wait(10)
 
         self.driver = driver
-        self.wait = WebDriverWait(self.driver, 5)
+        # self.wait = WebDriverWait(self.driver, 5)
 
     def crawl(self):
         while frontier_manager.is_not_empty():
@@ -163,6 +163,12 @@ class SeleniumSpider(object):
         # 4 put urls to frontier
         print("Putting urls to frontier")
         for url in urls:
+
+            r = requests.head(url, verify=False)
+            content_type = r.headers['content-type']
+            if 'application' in content_type:
+                continue
+
             if not frontier_manager.frontier.is_disallowed_url(url):
                 self.insert_page(True, url, site_id)
                 self.save_link(url=url, parent_url=self.url)
@@ -212,7 +218,7 @@ class SeleniumSpider(object):
             print("Changing url...")
             if self.retriesMap[self.url] < self.NUMBER_OF_RETRIES:
                 print("Retrying " + self.url + "... " + str(self.retriesMap[self.url]) + ". time")
-                self.change_url(url)
+                self.change_url(ScrapUrl(self.parent, self.url))
             else:
                 return False
 
@@ -281,6 +287,11 @@ class SeleniumSpider(object):
             docext = self.endswithWhich(urlfetched, extensions)
 
             if docext is None:
+                r = requests.head(urlfetched, verify=False)
+                content_type = r.headers['content-type']
+                if 'application' in content_type:
+                    continue
+
                 frontier_manager.add_url(self.parent, urlfetched)
                 urllist.append(urlfetched)
             else:
@@ -303,6 +314,13 @@ class SeleniumSpider(object):
 
                 if (len(urls_parsed_from_line) > 0):
                     for i in urls_parsed_from_line:
+
+                        r = requests.head(urlfetched, verify=False)
+                        content_type = r.headers['content-type']
+                        if 'application' in content_type:
+                            continue
+
+
                         urlfetched = urllib.parse.urlparse(i).geturl()
                         # if pictures need to be downloaded, replace extensions instead of documents_with_data
                         docext = self.endswithWhich(urlfetched, extensions)
