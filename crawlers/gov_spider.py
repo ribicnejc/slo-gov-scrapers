@@ -80,8 +80,11 @@ class SeleniumSpider(object):
         profile = webdriver.FirefoxProfile()
         profile.accept_untrusted_certs = True
 
+        profile.set_preference("browser.privatebrowsing.autostart", True)
+
         capabilities = webdriver.DesiredCapabilities().FIREFOX
         capabilities['acceptSslCerts'] = False
+        capabilities['acceptInsecureCerts'] = True
 
 
         driver = webdriver.Firefox(firefox_profile=profile, options=options, capabilities=capabilities)
@@ -105,8 +108,11 @@ class SeleniumSpider(object):
     def check_robots(self, site_id):
         rp = RobotFileParser()
         rp.set_url(self.driver.current_url + "robots.txt")
-        rp.read() # une mora ngavt vsaj 15 minut na 6 threadih
+        try:
+            rp.read() # une mora ngavt vsaj 15 minut na 6 threadih
         # self.crawl_delay = rp.crawl_delay('*')
+        except TimeoutError:
+            print("check robots file parsing failed, timeout...")
 
         r = requests.get(self.driver.current_url + "robots.txt")
         if r.status_code == 404:
@@ -164,10 +170,14 @@ class SeleniumSpider(object):
         print("Putting urls to frontier")
         for url in urls:
 
-            r = requests.head(url, verify=False)
-            content_type = r.headers['content-type']
-            if 'application' in content_type:
-                continue
+            try:
+                r = requests.head(url, verify=False)
+                content_type = r.headers['content-type']
+                if 'application' in content_type:
+                    continue
+            except:
+                a = 3
+                # print("head request failed")
 
             if not frontier_manager.frontier.is_disallowed_url(url):
                 self.insert_page(True, url, site_id)
@@ -221,6 +231,8 @@ class SeleniumSpider(object):
                 self.change_url(ScrapUrl(self.parent, self.url))
             else:
                 return False
+        except:
+            print("This url should be banned -> ", self.url)
 
     def save_site(self, url):
         domain = get_domain_name(url)
@@ -287,11 +299,14 @@ class SeleniumSpider(object):
             docext = self.endswithWhich(urlfetched, extensions)
 
             if docext is None:
-                r = requests.head(urlfetched, verify=False)
-                content_type = r.headers['content-type']
-                if 'application' in content_type:
-                    continue
-
+                try:
+                    r = requests.head(urlfetched, verify=False)
+                    content_type = r.headers['content-type']
+                    if 'application' in content_type:
+                        continue
+                except:
+                    a = 3
+                    # print("head request failed")
                 frontier_manager.add_url(self.parent, urlfetched)
                 urllist.append(urlfetched)
             else:
@@ -315,10 +330,14 @@ class SeleniumSpider(object):
                 if (len(urls_parsed_from_line) > 0):
                     for i in urls_parsed_from_line:
 
-                        r = requests.head(urlfetched, verify=False)
-                        content_type = r.headers['content-type']
-                        if 'application' in content_type:
-                            continue
+                        try:
+                            r = requests.head(urlfetched, verify=False)
+                            content_type = r.headers['content-type']
+                            if 'application' in content_type:
+                                continue
+                        except:
+                            a = 3
+                            # print("head request failed")
 
 
                         urlfetched = urllib.parse.urlparse(i).geturl()

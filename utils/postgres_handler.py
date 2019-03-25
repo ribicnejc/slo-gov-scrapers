@@ -4,9 +4,9 @@ import psycopg2
 
 class DBHandler(object):
     def __init__(self):
-        self.conn = psycopg2.connect(dbname='postgres', port=5433, user='postgres', host='localhost',
+        self.conn = psycopg2.connect(dbname='postgres', port=5432, user='postgres', host='localhost',
                                      # port 5433 - miha, port 5432 - nejc
-                                     password='postgres1234')  # postgres1234 - miha, postgres - nejc
+                                     password='postgres')  # postgres1234 - miha, postgres - nejc
 
     def insert_site(self, domain, robots_content, sitemap_content):
         cursor = self.conn.cursor()
