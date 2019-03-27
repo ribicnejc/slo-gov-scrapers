@@ -114,6 +114,8 @@ class SeleniumSpider(object):
         # self.crawl_delay = rp.crawl_delay('*')
         except TimeoutError:
             print("check robots file parsing failed, timeout...")
+        except:
+            print("oh my")
 
         r = requests.get(self.driver.current_url + "robots.txt")
         if r.status_code == 404:
