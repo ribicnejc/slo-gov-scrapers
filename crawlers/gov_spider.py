@@ -3,6 +3,7 @@ import re
 import urllib
 import requests
 import threading
+import json
 
 # from urllib.robotparser import RobotFileParser
 from managers.robotparser import RobotFileParser
@@ -117,7 +118,7 @@ class SeleniumSpider(object):
         r = requests.get(self.driver.current_url + "robots.txt")
         if r.status_code == 404:
             return
-        content = r.content.decode('utf-8').split('\n')
+        content = "\n".join(r.content.decode('utf-8').split('\n'))
         self.robots_content = content
         for el in content:
             if 'Sitemap' in el:
