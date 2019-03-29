@@ -122,6 +122,8 @@ class SeleniumSpider(object):
             return
         content = "\n".join(r.content.decode('utf-8').split('\n'))
         self.robots_content = content
+        self.robots_content = self.filterNotFoundRobotSources(self.robots_content)
+
         for el in content:
             if 'Sitemap' in el:
                 self.sitemaps.add(el.replace('Sitemap: ', ''))
@@ -140,6 +142,13 @@ class SeleniumSpider(object):
                 self.insert_page(True, elt.text, site_id)
                 self.save_link(url=elt.text, parent_url=self.url)  # creating reference as core to sitemaps
                 frontier_manager.add_url(self.driver.current_url, elt.text)
+
+    def filterNotFoundRobotSources(self, robots_content):
+        fp = robots_content.split("\n")
+        if "<!doctype html>" in fp[0].lower() or "<html>" in fp[0].lower():
+            return ""
+        else:
+            return robots_content
 
     def scrap_page(self):
         print("Scraping page: " + self.driver.current_url)
@@ -179,7 +188,7 @@ class SeleniumSpider(object):
                 if 'application' in content_type:
                     continue
             except:
-                a = 3
+                fail = 3
                 # print("head request failed")
 
             if not frontier_manager.frontier.is_disallowed_url(url):
