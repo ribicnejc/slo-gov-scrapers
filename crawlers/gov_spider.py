@@ -123,7 +123,10 @@ class SeleniumSpider(object):
             return
         if r.status_code == 404:
             return
-        content = "\n".join(r.content.decode('utf-8').split('\n'))
+        try:
+            content = "\n".join(r.content.decode('utf-8').split('\n'))
+        except:
+            return
         self.robots_content = content
         self.robots_content = self.filterNotFoundRobotSources(self.robots_content)
 
