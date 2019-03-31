@@ -117,7 +117,10 @@ class SeleniumSpider(object):
         except:
             print("oh my")
 
-        r = requests.get(self.driver.current_url + "robots.txt")
+        try:
+            r = requests.get(self.driver.current_url + "robots.txt")
+        except:
+            return
         if r.status_code == 404:
             return
         content = "\n".join(r.content.decode('utf-8').split('\n'))
