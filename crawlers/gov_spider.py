@@ -266,7 +266,10 @@ class SeleniumSpider(object):
             return
 
         r = requests.head(url, verify=False)
-        content_type = r.headers['content-type']
+        try:
+            content_type = r.headers['content-type']
+        except KeyError:
+            return
         if 'html' in content_type:
             page_type_code = 'HTML'
 
