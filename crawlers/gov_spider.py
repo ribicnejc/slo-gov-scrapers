@@ -5,6 +5,9 @@ import requests
 import threading
 import json
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # from urllib.robotparser import RobotFileParser
 from managers.robotparser import RobotFileParser
 from urllib.robotparser import RobotFileParser
