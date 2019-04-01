@@ -79,7 +79,7 @@ class SeleniumSpider(object):
 
         # firefox settings
         options = Options()
-        options.headless = True
+        options.headless = settings.HEADLESS_BROWSER
 
         profile = webdriver.FirefoxProfile()
         profile.accept_untrusted_certs = True
@@ -310,6 +310,16 @@ class SeleniumSpider(object):
 
     def find_links(self, page_bd, current_curl):  # vrni vse frontier urlje, pa shrani image v bazo...
         urllist = []
+
+        hrefs = self.driver.find_elements_by_xpath('//a[@href]')
+        for url in hrefs:
+            urllist.append(url.get_attribute("href"))
+
+        return urllist
+
+        # jshrefs = self.driver.find_elements_by_xpath('//script[@onclick]')
+        # for url in jshrefs:
+        #     urllist.append(url)
 
         page_id = self.db_data.get_page_id(current_curl)
 
