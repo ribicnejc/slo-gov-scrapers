@@ -148,9 +148,7 @@ class SeleniumSpider(object):
             self.sitemap_content = self.sitemap_content + "," + r.content.decode('utf-8')
             e = BeautifulSoup(r.content, 'html.parser')
             for elt in e.find_all('loc'):
-                self.insert_page(True, elt.text, site_id)
-                self.save_link(url=elt.text, parent_url=self.url)  # creating reference as core to sitemaps
-                frontier_manager.add_url(self.driver.current_url, elt.text)
+                frontier_manager.add_url(self.url, elt.text)
 
     def filterNotFoundRobotSources(self, robots_content):
         fp = robots_content.split("\n")
@@ -163,7 +161,7 @@ class SeleniumSpider(object):
         print("Scraping page: " + self.driver.current_url)
 
         # 0 saving site
-        self.save_site(self.driver.current_url)  # here is current saved domain
+        self.save_site(self.url)  # here is current saved domain
 
         site_id = self.db_data.get_site_id(get_domain_name(self.url))
 
@@ -172,11 +170,15 @@ class SeleniumSpider(object):
         self.check_robots(site_id)  # robots save sitemaps to frontier in db
 
         print("Updating site with sitemap content")
-        self.save_site(self.driver.current_url)  # here is current saved domain
+        self.save_site(self.url)  # here is current saved domain
 
         # 2 insert current page
         print("Inserting current page")
         self.insert_page(False, self.url, site_id)
+
+        # 2.5 saving link
+        if self.parent is not None and self.parent != "" and self.parent != "/":
+            self.save_link(self.parent, self.url)
 
         print("Reseting bin_manager")
         self.bin_manager.reset()  # inserts take place in link searches...
@@ -184,31 +186,17 @@ class SeleniumSpider(object):
         # 3 fetch all urls
         print("Searching for urls...")
         urls = self.find_links(self.driver.page_source,
-                               self.driver.current_url)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
+                               self.url)  # !!!!!! list of urls? # method should not save it to frontier... we should save it here first
         print("Number of urls found: " + len(urls).__str__())
 
         # 4 put urls to frontier
         print("Putting urls to frontier")
         for url in urls:
-
-            try:
-                r = requests.head(url, verify=False)
-                content_type = r.headers['content-type']
-                if 'application' in content_type:
-                    continue
-            except:
-                fail = 3
-                # print("head request failed")
-
-            if not frontier_manager.frontier.is_disallowed_url(url):
-                self.insert_page(True, url, site_id)
-                self.save_link(url=url, parent_url=self.url)
-                # print("Inserting page, making link with: " + self.url + " -> " + url)
-                frontier_manager.add_url(self.driver.current_url, url)
+            frontier_manager.add_url(self.url, url)
 
         # 6 fetch images
         print("Searching for images...")
-        self.find_images(self.driver.page_source, self.driver.current_url)
+        self.find_images(self.driver.page_source, self.url)
 
         # 7 fetch binary files (pdf, ppts, docx,...)
 
@@ -236,6 +224,7 @@ class SeleniumSpider(object):
 
         # self.parent = self.url
         self.url = url.url
+        self.parent = url.parent
         try:
             frontier_manager.put_domain_access_time(self.current_domain, time.time())
             self.driver.get(self.url)
@@ -245,7 +234,7 @@ class SeleniumSpider(object):
             if self.retriesMap[self.url] == 0:
                 self.retriesMap = defaultdict(int)  # cleansing dict, we don't need past urls in our dict
             self.retriesMap[self.url] += 1
-            sleep(settings.TIME_BETWEEN_REQUESTS)  # TODO check why it timeouts
+            sleep(settings.TIME_BETWEEN_REQUESTS)
             print("Changing url...")
             if self.retriesMap[self.url] < self.NUMBER_OF_RETRIES:
                 print("Retrying " + self.url + "... " + str(self.retriesMap[self.url]) + ". time")
@@ -295,17 +284,11 @@ class SeleniumSpider(object):
             return
         self.db_data.insert_page(site_id, page_type_code, url, html_content, http_status_code)
 
-    def save_link(self, url, parent_url):
-        if parent_url:
-            from_page = self.db_data.get_page_id(parent_url)  # get parent id
-        else:  # seed url
-            from_page = self.db_data.get_page_id(url)
+    def save_link(self, parent_url, url):
+        from_page = self.db_data.get_page_id(parent_url)  # get parent id
         to_page = self.db_data.get_page_id(url)  # get current id
-        if not to_page:
-            a = 4
-
-            # TODO save link should be called when inserting to frontier....
-            # because url = sova, and parent url is arso.. just because queue and not real parenting
+        if not to_page or not from_page:
+            return
         self.db_data.insert_link(from_page, to_page)
 
     def find_links(self, page_bd, current_curl):  # vrni vse frontier urlje, pa shrani image v bazo...
@@ -313,46 +296,12 @@ class SeleniumSpider(object):
 
         hrefs = self.driver.find_elements_by_xpath('//a[@href]')
         for url in hrefs:
-            urllist.append(url.get_attribute("href"))
-
-        return urllist
-
-        # jshrefs = self.driver.find_elements_by_xpath('//script[@onclick]')
-        # for url in jshrefs:
-        #     urllist.append(url)
-
-        page_id = self.db_data.get_page_id(current_curl)
+            try:
+                urllist.append(url.get_attribute("href"))
+            except:
+                continue
 
         page_body = BeautifulSoup(page_bd, 'html.parser')
-
-        for link in page_body.findAll('', attrs={'href': re.compile("^https?://")}):
-
-            # print urlparse.urlparse(link.get('href'))
-            urlfetched = urllib.parse.urlparse(link.get('href')).geturl()
-
-            docext = self.endswithWhich(urlfetched, extensions)
-
-            if docext is None:
-                try:
-                    r = requests.head(urlfetched, verify=False)
-                    content_type = r.headers['content-type']
-                    if 'application' in content_type:
-                        continue
-                except:
-                    a = 3
-                    # print("head request failed")
-                frontier_manager.add_url(self.parent, urlfetched)
-                urllist.append(urlfetched)
-            else:
-                if docext in documents_with_data:
-                    # self.download_document(urlfetched, docext)
-                    self.bin_manager.insert_document(
-                        (urlfetched, page_id, docext))
-                elif docext in imgexts:
-                    self.bin_manager.insert_image(
-                        (urlfetched, page_id, docext))
-
-        # print frontier_manager.frontier.frontier
 
         for script in page_body.findAll('script'):
 
@@ -363,34 +312,11 @@ class SeleniumSpider(object):
 
                 if (len(urls_parsed_from_line) > 0):
                     for i in urls_parsed_from_line:
-
-                        try:
-                            r = requests.head(urlfetched, verify=False)
-                            content_type = r.headers['content-type']
-                            if 'application' in content_type:
-                                continue
-                        except:
-                            a = 3
-                            # print("head request failed")
-
-
                         urlfetched = urllib.parse.urlparse(i).geturl()
                         # if pictures need to be downloaded, replace extensions instead of documents_with_data
                         docext = self.endswithWhich(urlfetched, extensions)
                         if docext is None:  # if it not has an extension
-                            frontier_manager.add_url(self.parent, urlfetched)  # URLs for frontier...
                             urllist.append(urlfetched)
-                        else:
-                            if docext in documents_with_data:
-                                # self.download_document(urlfetched, docext)
-                                # ( url, page id, extension)
-                                self.bin_manager.insert_document(
-                                    (urlfetched, page_id, docext))  # TODO insert also pageId and other data
-                            elif docext in imgexts:
-                                self.bin_manager.insert_image(
-                                    (urlfetched, page_id, docext))  # TODO insert also pageId and other data
-
-                                # print frontier_manager.frontier.frontier
 
         return urllist
 

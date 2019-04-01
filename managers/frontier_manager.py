@@ -76,10 +76,10 @@ def get_domain_access_time(domain):
 
 
 def plant_seeds():
-    add_url("", "http://evem.gov.si/")
-    add_url("", "https://e-uprava.gov.si/")
-    add_url("", "https://podatki.gov.si/")
-    add_url("", "http://www.e-prostor.gov.si/")
+    add_url('', "http://evem.gov.si/")
+    add_url('', "https://e-uprava.gov.si/")
+    add_url('', "https://podatki.gov.si/")
+    add_url('', "http://www.e-prostor.gov.si/")
 
     # frontier.add_url(ScrapUrl("", "http://www.sova.gov.si/"))
     # frontier.add_url(ScrapUrl("", "http://www.sova.gov.si/si/delovno_podrocje/"))
