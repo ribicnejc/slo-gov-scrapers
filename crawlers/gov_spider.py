@@ -52,9 +52,10 @@ def stale_decorator(f):
 
 
 class SeleniumSpider(object):
-    def __init__(self):
+    def __init__(self, e):
         self.sitemaps = set()
         self.disallowed_urls = set()
+        self.thread_num = e
 
         self.robots_content = ""
         self.sitemap_content = ""
@@ -90,7 +91,6 @@ class SeleniumSpider(object):
         capabilities['acceptSslCerts'] = False
         capabilities['acceptInsecureCerts'] = True
 
-
         driver = webdriver.Firefox(firefox_profile=profile, options=options, capabilities=capabilities)
         #    firefox_options=chrome_options,
         #   service_args=service_args
@@ -102,11 +102,18 @@ class SeleniumSpider(object):
         # self.wait = WebDriverWait(self.driver, 5)
 
     def crawl(self):
-        while frontier_manager.is_not_empty():
-            print("Changing url...")
-            if not self.change_url(frontier_manager.get_next()):
-                continue
-            self.scrap_page()
+        while not frontier_manager.should_stop():
+            if frontier_manager.is_not_empty():
+                frontier_manager.THREAD_STOP[self.thread_num] = False
+                print("Changing url...")
+                if not self.change_url(frontier_manager.get_next()):
+                    continue
+                self.scrap_page()
+            else:
+                print("! -- Thread " + str(self.thread_num) + " waiting for next url")
+                frontier_manager.THREAD_STOP[self.thread_num] = True
+                sleep(settings.TIME_BETWEEN_REQUESTS)
+
         self.driver.close()
 
     def check_robots(self, site_id):

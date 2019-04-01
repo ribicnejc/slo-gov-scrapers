@@ -1,6 +1,10 @@
 from queue import Queue
 from utils.url_helper import url_canon
 from utils.url_helper import get_domain_name
+import utils.settings as settings
+
+
+THREAD_STOP = []
 
 
 class Frontier(object):
@@ -49,6 +53,17 @@ class ScrapUrl(object):
 
 frontier = Frontier()
 
+
+def init_thread_stop_flags():
+    for i in range(settings.NUMBER_OF_SPIDERS):
+        THREAD_STOP.append(False)
+
+
+def should_stop():
+    val = True;
+    for i in range(settings.NUMBER_OF_SPIDERS):
+        val = val and THREAD_STOP[i]
+    return val
 
 def get_next():
     url = frontier.get_next()
