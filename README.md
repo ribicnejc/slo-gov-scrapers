@@ -21,7 +21,8 @@ Start scraper in terminal:
 
 
 # Scraped data
-Dumped data is available on this link:
+Dumped data is available on this link.
+Please unrar it first and then import it manually to database.
 
     https://www.dropbox.com/s/yebf12am9fa18tb/dump_final.rar?dl=0
     
