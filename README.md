@@ -18,3 +18,14 @@ Install all dependencies in terminal:
 Start scraper in terminal:
     
     python runner.py
+
+
+# Scraped data
+Dumped data is available on this link:
+
+    https://www.dropbox.com/s/yebf12am9fa18tb/dump_final.rar?dl=0
+    
+# Report
+Report is available in folder:
+    
+    slo-gov-scrapers/report/report.pdf
