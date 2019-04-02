@@ -4,9 +4,9 @@ import psycopg2
 
 class DBHandler(object):
     def __init__(self):
-        self.conn = psycopg2.connect(dbname='crawldb', port=5432, user='postgres', host='localhost',
+        self.conn = psycopg2.connect(dbname='postgres', port=5432, user='postgres', host='localhost',
                                      # port 5433 - miha, port 5432 - nejc
-                                     password='toor')  # postgres1234 - miha, postgres - nejc
+                                     password='postgres')  # postgres1234 - miha, postgres - nejc
 
     def insert_site(self, domain, robots_content, sitemap_content):
         cursor = self.conn.cursor()
@@ -62,21 +62,23 @@ class DBHandler(object):
         self.conn.commit()
 
     def insert_image(self, page_id, filename, content_type, data):
-        cursor = self.conn.cursor()
-        SQL = "INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time) VALUES (%s, %s, %s, %s, %s)"
-        values = (page_id, filename, content_type, data, "now")
-        cursor.execute(SQL, values)
-        self.conn.commit()
+        pass
+        # cursor = self.conn.cursor()
+        # SQL = "INSERT INTO crawldb.image (page_id, filename, content_type, data, accessed_time) VALUES (%s, %s, %s, %s, %s)"
+        # values = (page_id, filename, content_type, data, "now")
+        # cursor.execute(SQL, values)
+        # self.conn.commit()
 
     def insert_page_data(self, page_id, data_type_code, data):
-        cursor = self.conn.cursor()
-        binary = psycopg2.Binary(data)  # binary read is implemented in download, fix if bad practice
-
-        SQL = "INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES (%s, %s, %s);"
-        values = (page_id, data_type_code, binary)
-        cursor.execute(SQL, values)
-
-        self.conn.commit()
+        pass
+        # cursor = self.conn.cursor()
+        # binary = psycopg2.Binary(data)  # binary read is implemented in download, fix if bad practice
+        #
+        # SQL = "INSERT INTO crawldb.page_data (page_id, data_type_code, data) VALUES (%s, %s, %s);"
+        # values = (page_id, data_type_code, binary)
+        # cursor.execute(SQL, values)
+        #
+        # self.conn.commit()
 
     def insert_page_data_string(self, page_id, data_type_code, datastring):
         cursor = self.conn.cursor()
